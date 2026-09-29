@@ -46,6 +46,17 @@ auto main() -> int
     expectations expect;
     const auto root = std::filesystem::current_path();
     const auto modules = root / "modules";
+    const auto repository_instructions = root.parent_path() / "AGENTS.md";
+
+    expect.require(std::filesystem::exists(repository_instructions),
+        "repository AGENTS.md must exist");
+    if (std::filesystem::exists(repository_instructions))
+    {
+        const auto instructions = read_text(repository_instructions);
+        expect.require(instructions.contains("E:\\github\\cnetmod\\AGENTS.md") &&
+                instructions.contains("完整读取最新"),
+            "AI instructions must require reading the latest cnetmod AGENTS.md in full");
+    }
 
     const std::set<std::string> allowed_modules{"ai", "chat", "system"};
     for (const auto& entry : std::filesystem::directory_iterator{modules})
