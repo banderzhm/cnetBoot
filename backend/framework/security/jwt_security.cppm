@@ -1,4 +1,4 @@
-export module cnetnexus.framework.security.jwt_security;
+export module cnetboot.framework.security.jwt_security;
 
 import std;
 import cnetmod.application;
@@ -6,10 +6,10 @@ import cnetmod.coro.task;
 import cnetmod.protocol.http;
 import cnetmod.protocol.redis;
 import cnetmod.orm;
-import cnetnexus.framework.error;
-import cnetnexus.framework.security.current_user;
+import cnetboot.framework.error;
+import cnetboot.framework.security.current_user;
 
-export namespace cnetnexus::security {
+export namespace cnetboot::security {
 
 struct authenticated_context
 {
@@ -36,7 +36,7 @@ struct jwt_session_id
  *         数据源故障 -> DEPENDENCY.UNAVAILABLE
  */
 using principal_loader = std::function<cnetmod::task<
-    std::expected<authenticated_context, cnetnexus::framework::error::error_code>>(
+    std::expected<authenticated_context, cnetboot::framework::error::error_code>>(
     std::int64_t)>;
 
 [[nodiscard]] auto jwt_session_key(std::string_view session_id)
@@ -56,20 +56,20 @@ public:
 
     /// @brief 新建会话，返回会话 ID。
     [[nodiscard]] auto open(const jwt_session_record& record)
-        -> cnetmod::task<std::expected<std::string, cnetnexus::framework::error::error_code>>;
+        -> cnetmod::task<std::expected<std::string, cnetboot::framework::error::error_code>>;
 
     /// @brief 读取并续期；会话不存在（过期或已撤销）返回 nullopt。
     [[nodiscard]] auto touch(std::string_view session_id)
         -> cnetmod::task<std::expected<std::optional<jwt_session_record>,
-            cnetnexus::framework::error::error_code>>;
+            cnetboot::framework::error::error_code>>;
 
     /// @brief 原子换发；并发 refresh 只有一个能消费旧会话。
     [[nodiscard]] auto rotate(std::string_view session_id, const jwt_session_record& record)
-        -> cnetmod::task<std::expected<std::string, cnetnexus::framework::error::error_code>>;
+        -> cnetmod::task<std::expected<std::string, cnetboot::framework::error::error_code>>;
 
     /// @brief 撤销会话（幂等）。
     [[nodiscard]] auto revoke(std::string_view session_id)
-        -> cnetmod::task<std::expected<void, cnetnexus::framework::error::error_code>>;
+        -> cnetmod::task<std::expected<void, cnetboot::framework::error::error_code>>;
 
 private:
     std::shared_ptr<cnetmod::redis::redis_template> redis_;
@@ -103,4 +103,4 @@ struct jwt_security_options
 [[nodiscard]] auto jwt_security(jwt_security_options options)
     -> cnetmod::http::middleware_fn;
 
-} // namespace cnetnexus::security
+} // namespace cnetboot::security

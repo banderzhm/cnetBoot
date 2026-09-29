@@ -1,12 +1,12 @@
-module cnetnexus.system.service.department_service;
+module cnetboot.system.service.department_service;
 
 import std;
-import cnetnexus.framework.error;
-import cnetnexus.system.service.failure;
+import cnetboot.framework.error;
+import cnetboot.system.service.failure;
 import cnetmod.coro.task;
 import cnetmod.orm;
 
-namespace cnetnexus::system {
+namespace cnetboot::system {
 namespace {
 
 template <typename T>
@@ -72,7 +72,7 @@ department_service::department_service(
 }
 
 auto department_service::get(std::int64_t department_id)
-    -> cnetmod::task<std::expected<std::optional<sys_dept>, cnetnexus::framework::error::error_code>>
+    -> cnetmod::task<std::expected<std::optional<sys_dept>, cnetboot::framework::error::error_code>>
 {
     auto result = co_await departments_.get_by_id(
         cnetmod::orm::param_value::from_int(department_id));
@@ -82,7 +82,7 @@ auto department_service::get(std::int64_t department_id)
 }
 
 auto department_service::list(std::string_view name)
-    -> cnetmod::task<std::expected<std::vector<sys_dept>, cnetnexus::framework::error::error_code>>
+    -> cnetmod::task<std::expected<std::vector<sys_dept>, cnetboot::framework::error::error_code>>
 {
     cnetmod::orm::query_wrapper<sys_dept> query;
     if (!name.empty())
@@ -95,7 +95,7 @@ auto department_service::list(std::string_view name)
 }
 
 auto department_service::tree(std::string_view name)
-    -> cnetmod::task<std::expected<std::vector<department_node>, cnetnexus::framework::error::error_code>>
+    -> cnetmod::task<std::expected<std::vector<department_node>, cnetboot::framework::error::error_code>>
 {
     auto departments = co_await list(name);
     if (!departments)
@@ -105,7 +105,7 @@ auto department_service::tree(std::string_view name)
 }
 
 auto department_service::create(sys_dept department)
-    -> cnetmod::task<std::expected<sys_dept, cnetnexus::framework::error::error_code>>
+    -> cnetmod::task<std::expected<sys_dept, cnetboot::framework::error::error_code>>
 {
     if (department.dept_name.empty() || department.parent_id < 0)
         co_return std::unexpected(error_code::request_invalid_argument);
@@ -124,7 +124,7 @@ auto department_service::create(sys_dept department)
 }
 
 auto department_service::update(sys_dept department)
-    -> cnetmod::task<std::expected<void, cnetnexus::framework::error::error_code>>
+    -> cnetmod::task<std::expected<void, cnetboot::framework::error::error_code>>
 {
     if (department.dept_id <= 0 || department.dept_name.empty() ||
         department.parent_id == department.dept_id)
@@ -142,7 +142,7 @@ auto department_service::update(sys_dept department)
 }
 
 auto department_service::remove(std::int64_t department_id)
-    -> cnetmod::task<std::expected<void, cnetnexus::framework::error::error_code>>
+    -> cnetmod::task<std::expected<void, cnetboot::framework::error::error_code>>
 {
     cnetmod::orm::query_wrapper<sys_dept> child_query;
     child_query.eq(&sys_dept::parent_id, department_id);
@@ -167,4 +167,4 @@ auto department_service::remove(std::int64_t department_id)
     co_return {};
 }
 
-} // namespace cnetnexus::system
+} // namespace cnetboot::system

@@ -4,12 +4,12 @@
  * 供应商无关：这里只有消息 / 请求 / 结果三个纯数据类型与增量回调，具体实现（OpenAI 兼容
  * 网关）由组合根注入，不外泄任何适配器或 HTTP 类型。
  */
-export module cnetnexus.reading.domain.llm_contract;
+export module cnetboot.ai.domain.llm_contract;
 
 import std;
 import cnetmod.coro.task;
 
-export namespace cnetnexus::reading {
+export namespace cnetboot::ai {
 
 /** @brief 一条对话消息。 */
 struct llm_message
@@ -40,4 +40,4 @@ struct llm_completion
 /** @brief 流式增量回调：返回 false 表示下游不再接收（如客户端断开），实现应尽快中断上游流。 */
 using llm_delta_sink = std::function<cnetmod::task<bool>(std::string_view)>;
 
-} // namespace cnetnexus::reading
+} // namespace cnetboot::ai

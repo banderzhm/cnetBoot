@@ -4,16 +4,16 @@
  * 数据层（mapper / repository）返回的文本可能包含 SQL、表名或驱动信息，
  * 不能进入响应体；服务层在这里把它记录下来并换成稳定的错误码。
  */
-export module cnetnexus.system.service.failure;
+export module cnetboot.system.service.failure;
 
 import std;
 import cnetmod.core.log;
 import cnetmod.orm;
-import cnetnexus.framework.error;
+import cnetboot.framework.error;
 
-export namespace cnetnexus::system {
+export namespace cnetboot::system {
 
-using error_code = cnetnexus::framework::error::error_code;
+using error_code = cnetboot::framework::error::error_code;
 
 /// @brief 存储访问失败：DEPENDENCY.UNAVAILABLE。
 [[nodiscard]] inline auto storage_failure(std::string_view operation,
@@ -44,4 +44,4 @@ template <typename T>
     return error_code::system_internal_error;
 }
 
-} // namespace cnetnexus::system
+} // namespace cnetboot::system

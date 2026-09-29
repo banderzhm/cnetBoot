@@ -1,13 +1,13 @@
-module cnetnexus.system.service.user_service;
+module cnetboot.system.service.user_service;
 
 import std;
 import cnetmod.coro.task;
 import cnetmod.orm;
-import cnetnexus.framework.error;
-import cnetnexus.framework.pagination;
-import cnetnexus.system.service.failure;
+import cnetboot.framework.error;
+import cnetboot.framework.pagination;
+import cnetboot.system.service.failure;
 
-namespace cnetnexus::system {
+namespace cnetboot::system {
 namespace {
 
     [[nodiscard]] auto to_dto(sys_user user) -> user_dto
@@ -55,7 +55,7 @@ auto user_service_factory::make(
 }
 
 auto user_service::get(std::int64_t user_id)
-    -> cnetmod::task<std::expected<std::optional<user_dto>, cnetnexus::framework::error::error_code>>
+    -> cnetmod::task<std::expected<std::optional<user_dto>, cnetboot::framework::error::error_code>>
 {
     auto result = co_await users_.get_by_id(
         cnetmod::orm::param_value::from_int(user_id));
@@ -68,19 +68,19 @@ auto user_service::get(std::int64_t user_id)
 }
 
 auto user_service::page(
-    cnetnexus::framework::pagination::page_request request,
+    cnetboot::framework::pagination::page_request request,
     std::string_view user_name)
     -> cnetmod::task<std::expected<
-        cnetnexus::framework::pagination::page_result<user_dto>,
-        cnetnexus::framework::error::error_code>>
+        cnetboot::framework::pagination::page_result<user_dto>,
+        cnetboot::framework::error::error_code>>
 {
-    const auto page_request = cnetnexus::framework::pagination::normalize(request);
+    const auto page_request = cnetboot::framework::pagination::normalize(request);
     auto page = co_await queries_.find_page(
         static_cast<std::size_t>(page_request.page),
         static_cast<std::size_t>(page_request.page_size), user_name);
     if (!page)
         co_return std::unexpected(storage_failure("user page", page.error()));
-    cnetnexus::framework::pagination::page_result<user_dto> response{
+    cnetboot::framework::pagination::page_result<user_dto> response{
         .total = static_cast<std::int64_t>(page->total),
         .page = page_request.page,
         .page_size = page_request.page_size};
@@ -91,7 +91,7 @@ auto user_service::page(
 }
 
 auto user_service::create(sys_user user)
-    -> cnetmod::task<std::expected<user_dto, cnetnexus::framework::error::error_code>>
+    -> cnetmod::task<std::expected<user_dto, cnetboot::framework::error::error_code>>
 {
     if (user.user_name.empty() || user.nick_name.empty() ||
         user.password_hash.empty())
@@ -103,7 +103,7 @@ auto user_service::create(sys_user user)
 }
 
 auto user_service::update(sys_user user)
-    -> cnetmod::task<std::expected<void, cnetnexus::framework::error::error_code>>
+    -> cnetmod::task<std::expected<void, cnetboot::framework::error::error_code>>
 {
     if (user.user_id <= 0 || user.user_name.empty() || user.nick_name.empty())
         co_return std::unexpected(error_code::request_invalid_argument);
@@ -114,7 +114,7 @@ auto user_service::update(sys_user user)
 }
 
 auto user_service::remove(std::int64_t user_id)
-    -> cnetmod::task<std::expected<void, cnetnexus::framework::error::error_code>>
+    -> cnetmod::task<std::expected<void, cnetboot::framework::error::error_code>>
 {
     auto result = co_await users_.remove_by_id(
         cnetmod::orm::param_value::from_int(user_id));
@@ -123,4 +123,4 @@ auto user_service::remove(std::int64_t user_id)
     co_return {};
 }
 
-} // namespace cnetnexus::system
+} // namespace cnetboot::system

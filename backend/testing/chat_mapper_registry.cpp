@@ -1,7 +1,7 @@
 import std;
 import cnetmod.orm;
-import cnetnexus.chat.mapper.chat_mapper;
-import cnetnexus.chat.domain.chat_record;
+import cnetboot.chat.mapper.chat_mapper;
+import cnetboot.chat.domain.chat_record;
 
 namespace {
 
@@ -21,7 +21,7 @@ auto main(int argc, char **argv) -> int {
   cnetmod::orm::mapper_registry registry;
   if (!registry.load_file(std::filesystem::path{argv[1]} / "ChatMapper.xml"))
     return 2;
-  if (!cnetnexus::chat::validate_chat_mapper_registry(registry))
+  if (!cnetboot::chat::validate_chat_mapper_registry(registry))
     return 3;
   if (registry.find_statement("ChatMapper.insertSession") != nullptr ||
       registry.find_statement("ChatMapper.insertMessage") != nullptr)
@@ -33,9 +33,9 @@ auto main(int argc, char **argv) -> int {
   cnetmod::orm::automatic_interceptor_options options;
   options.logical_delete_policy = deleted_at;
   auto sessions = cnetmod::orm::make_automatic_interceptor_chain<
-      cnetnexus::chat::chat_session_record>(options);
+      cnetboot::chat::chat_session_record>(options);
   auto messages = cnetmod::orm::make_automatic_interceptor_chain<
-      cnetnexus::chat::chat_message_record>(options);
+      cnetboot::chat::chat_message_record>(options);
   if (!sessions || !messages)
     return 5;
   auto session_query =
@@ -67,7 +67,7 @@ auto main(int argc, char **argv) -> int {
     return 8;
 
   cnetmod::orm::data_permission_interceptor<
-      cnetnexus::chat::chat_session_record>
+      cnetboot::chat::chat_session_record>
       owner_filter{cnetmod::orm::data_permission_scope{
           .include_owner = true,
           .owner_id = 42,

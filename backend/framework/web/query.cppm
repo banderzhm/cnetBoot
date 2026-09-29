@@ -1,8 +1,8 @@
-export module cnetnexus.framework.web.query;
+export module cnetboot.framework.web.query;
 
 import std;
 
-export namespace cnetnexus::framework::web::query {
+export namespace cnetboot::framework::web::query {
 
 /** @brief 从 application/x-www-form-urlencoded 形式的 query string
  * 中取一个键的值。
@@ -28,4 +28,4 @@ export namespace cnetnexus::framework::web::query {
  */
 [[nodiscard]] auto path_id(std::string_view raw) -> std::optional<std::uint64_t>;
 
-} // namespace cnetnexus::framework::web::query
+} // namespace cnetboot::framework::web::query

@@ -1,11 +1,11 @@
 import std;
-import cnetnexus.framework.web.query;
+import cnetboot.framework.web.query;
 
-namespace query = cnetnexus::framework::web::query;
+namespace query = cnetboot::framework::web::query;
 
 // query 解析用例：百分号解码、'+'、整数与整数列表的边界。
-// 迁移自 xuanxue-algorithm tests/query_test.cpp：断言逐条保留，
-// 命名换成 cnetnexus::framework::web::query。
+// 迁移自 legacy application tests/query_test.cpp：断言逐条保留，
+// 命名换成 cnetboot::framework::web::query。
 auto main() -> int
 {
     constexpr std::string_view raw = "a=1&b=hello%20world&c=%E5%9B%9E%E6%AC%BE&d=x+y&e=&n=42&bad=4x&l=1,3";

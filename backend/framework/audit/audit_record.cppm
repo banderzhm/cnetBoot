@@ -2,12 +2,12 @@ module;
 
 #include <cnetmod/orm.hpp>
 
-export module cnetnexus.framework.audit.record;
+export module cnetboot.framework.audit.record;
 
 import std;
 import cnetmod.orm;
 
-export namespace cnetnexus::framework {
+export namespace cnetboot::framework {
 
 struct audit_log_record {
   std::uint64_t id{};
@@ -25,9 +25,9 @@ struct audit_log_record {
   cnetmod::orm::calendar_datetime created_at{};
 };
 
-} // namespace cnetnexus::framework
+} // namespace cnetboot::framework
 
-CNETMOD_MODEL(cnetnexus::framework::audit_log_record, "audit_log",
+CNETMOD_MODEL(cnetboot::framework::audit_log_record, "audit_log",
               CNETMOD_FIELD(id, "id", bigint, PK | AUTO_INC),
               CNETMOD_FIELD(actor_user_id, "actor_user_id", bigint),
               CNETMOD_FIELD(actor_username, "actor_username", varchar),

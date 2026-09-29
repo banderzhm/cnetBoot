@@ -10,13 +10,13 @@
 #     (type, instance) 注册，pool_size 只决定并发连接数，**不做** key 轮换。
 #     「多 key」= 同一供应商配成多个条目，再由顶层 llm.providers[].keys[] 聚合成
 #     一个逻辑供应商；
-#  2. Nexus 显式调用 cnetmod add_chat_model，并明确开启 round_robin 与跨实例 fallback；
+#  2. cnetBoot 显式调用 cnetmod add_chat_model，并明确开启 round_robin 与跨实例 fallback；
 #     只列出多个实例不会隐式换 key，失败顺序与重试次数来自 llm.resilience；
 #  3. 每条 api_key 必须走环境变量展开，禁止明文。cnetmod 支持 ${VAR}、
 #     ${VAR:-default} 与转义 $${；无默认值的缺失变量会让配置加载失败；
-#  4. 未注入密钥的环境把条目 enabled 设为 false（下面用 ${CNETNEXUS_LLM_ENABLED:-false}）。
+#  4. 未注入密钥的环境把条目 enabled 设为 false（下面用 ${CNETBOOT_LLM_ENABLED:-false}）。
 #     未启用的条目允许 api_key 为空，它对应的 key 在目录里显示 configured=false；
-#  5. llm 小节由 reading 模块声明（typed options），未知键、默认值不可达、重复名/模型/
+#  5. llm 小节由 ai 模块声明（typed options），未知键、默认值不可达、重复名/模型/
 #     key、一个 services 条目被多条 key 引用，都会让 build() 带配置路径失败。
 
 services:
@@ -24,10 +24,10 @@ services:
   openai-primary:
     type: openai
     instance: alpha
-    enabled: ${CNETNEXUS_LLM_ENABLED:-false}
+    enabled: ${CNETBOOT_LLM_ENABLED:-false}
     required: false
     base_url: https://api.openai.com/v1
-    api_key: ${CNETNEXUS_OPENAI_API_KEY:-}
+    api_key: ${CNETBOOT_OPENAI_API_KEY:-}
     tls_verify: true
     timeout_seconds: 120
     pool_size: 4
@@ -35,10 +35,10 @@ services:
   openai-secondary:
     type: openai
     instance: beta
-    enabled: ${CNETNEXUS_LLM_ENABLED:-false}
+    enabled: ${CNETBOOT_LLM_ENABLED:-false}
     required: false
     base_url: https://api.openai.com/v1
-    api_key: ${CNETNEXUS_OPENAI_API_KEY_SECONDARY:-}
+    api_key: ${CNETBOOT_OPENAI_API_KEY_SECONDARY:-}
     tls_verify: true
     timeout_seconds: 120
     pool_size: 2
@@ -46,10 +46,10 @@ services:
   deepseek-primary:
     type: openai
     instance: deepseek
-    enabled: ${CNETNEXUS_LLM_ENABLED:-false}
+    enabled: ${CNETBOOT_LLM_ENABLED:-false}
     required: false
     base_url: https://api.deepseek.com/v1
-    api_key: ${CNETNEXUS_DEEPSEEK_API_KEY:-}
+    api_key: ${CNETBOOT_DEEPSEEK_API_KEY:-}
     tls_verify: true
     timeout_seconds: 120
     pool_size: 2

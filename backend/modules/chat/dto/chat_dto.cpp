@@ -2,15 +2,15 @@ module;
 
 #include <cnetmod/json_codec.hpp>
 
-module cnetnexus.chat.dto.chat;
+module cnetboot.chat.dto.chat;
 
 // DTO projection and serialization stay outside the HTTP controller layer.
 
 import std;
 import cnetmod.json;
-import cnetnexus.chart.domain.naming;
+import cnetboot.framework.time;
 
-namespace cnetnexus::chat::dto {
+namespace cnetboot::chat::dto {
 
 namespace {
 
@@ -39,31 +39,31 @@ namespace {
 
 } // namespace
 
-auto project(const cnetnexus::chat::chat_session& value) -> chat_session_response
+auto project(const cnetboot::chat::chat_session& value) -> chat_session_response
 {
     chat_session_response result{.id = value.id,
         .title = value.title,
-        .algorithm = value.algorithm,
+        .category = value.category,
         .systemPrompt = value.system_prompt,
         .model = value.model,
         .temperature = value.temperature,
         .messageCount = value.message_count,
-        .createdAt = cnetnexus::chart::iso8601_utc(value.created_at),
-        .updatedAt = cnetnexus::chart::iso8601_utc(value.updated_at)};
+        .createdAt = cnetboot::framework::iso8601_utc(value.created_at),
+        .updatedAt = cnetboot::framework::iso8601_utc(value.updated_at)};
     if (value.last_message_at != 0)
-        result.lastMessageAt = cnetnexus::chart::iso8601_utc(value.last_message_at);
+        result.lastMessageAt = cnetboot::framework::iso8601_utc(value.last_message_at);
     return result;
 }
 
-auto project(const cnetnexus::chat::chat_message& value) -> chat_message_response
+auto project(const cnetboot::chat::chat_message& value) -> chat_message_response
 {
     chat_message_response result{.id = value.id,
         .sessionId = value.session_id,
         .role = value.role,
         .content = value.content,
         .model = value.model,
-        .createdAt = cnetnexus::chart::iso8601_utc(value.created_at)};
-    if (value.role == cnetnexus::chat::role_assistant)
+        .createdAt = cnetboot::framework::iso8601_utc(value.created_at)};
+    if (value.role == cnetboot::chat::role_assistant)
     {
         result.tokensIn = value.tokens_in;
         result.tokensOut = value.tokens_out;
@@ -74,7 +74,7 @@ auto project(const cnetnexus::chat::chat_message& value) -> chat_message_respons
 auto to_document(const chat_session_response& value) -> cnetmod::json::document
 {
     return cnetmod::json::object({{"id", value.id}, {"title", value.title},
-        {"algorithm", value.algorithm}, {"systemPrompt", value.systemPrompt},
+        {"category", value.category}, {"systemPrompt", value.systemPrompt},
         {"model", value.model}, {"temperature", value.temperature},
         {"messageCount", value.messageCount},
         {"lastMessageAt", nullable(value.lastMessageAt)},
@@ -91,4 +91,4 @@ auto to_document(const chat_message_response& value) -> cnetmod::json::document
         {"tokensOut", nullable_number(value.tokensOut)}});
 }
 
-} // namespace cnetnexus::chat::dto
+} // namespace cnetboot::chat::dto

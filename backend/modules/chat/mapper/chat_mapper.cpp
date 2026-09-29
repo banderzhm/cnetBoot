@@ -1,20 +1,20 @@
-module cnetnexus.chat.mapper.chat_mapper;
+module cnetboot.chat.mapper.chat_mapper;
 
 import std;
 import cnetmod.core.time;
 import cnetmod.coro.task;
 import cnetmod.orm;
-import cnetnexus.chat.domain.chat_domain;
-import cnetnexus.chat.domain.chat_record;
-import cnetnexus.framework.error;
-import cnetnexus.framework.pagination;
+import cnetboot.chat.domain.chat_domain;
+import cnetboot.chat.domain.chat_record;
+import cnetboot.framework.error;
+import cnetboot.framework.pagination;
 
-namespace cnetnexus::chat {
+namespace cnetboot::chat {
 namespace {
 
 namespace db_api = cnetmod::database;
 namespace orm_api = cnetmod::orm;
-using error_code = cnetnexus::framework::error::error_code;
+using error_code = cnetboot::framework::error::error_code;
 
 // XML mapper 只保留主键投影探针与原子计数/批量软删语句。
 constexpr std::string_view select_session_statement{"ChatMapper.selectSession"};
@@ -38,7 +38,7 @@ constexpr std::string_view soft_delete_messages_statement{"ChatMapper.softDelete
     return chat_session{.id = row.id,
         .owner_id = row.owner_id,
         .title = row.title,
-        .algorithm = row.algorithm,
+        .category = row.category,
         .system_prompt = row.system_prompt.value_or(std::string{}),
         .model = row.model,
         .temperature = std::strtod(row.temperature.c_str(), nullptr),
@@ -77,7 +77,7 @@ constexpr std::string_view soft_delete_messages_statement{"ChatMapper.softDelete
 {
     return chat_session_record{.owner_id = value.owner_id,
         .title = value.title,
-        .algorithm = value.algorithm,
+        .category = value.category,
         .system_prompt = value.system_prompt,
         .model = value.model,
         .temperature = std::format("{:.2f}", value.temperature),
@@ -208,8 +208,8 @@ auto mysql_chat_mapper::find_session_page(const chat_session_query& value)
 
     // 过滤与排序由 query_wrapper 表达；计数与 LIMIT/OFFSET 交给仓储的 page()。
     auto filter = orm_api::query_wrapper<chat_session_record>{};
-    if (!value.algorithm.empty())
-        filter.eq(&chat_session_record::algorithm, value.algorithm);
+    if (!value.category.empty())
+        filter.eq(&chat_session_record::category, value.category);
     filter.order_by_desc(&chat_session_record::last_message_at)
         .order_by_desc(&chat_session_record::created_at)
         .order_by_desc(&chat_session_record::id);
@@ -353,4 +353,4 @@ auto validate_chat_mapper_registry(const cnetmod::orm::mapper_registry& registry
     return {};
 }
 
-} // namespace cnetnexus::chat
+} // namespace cnetboot::chat

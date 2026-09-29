@@ -1,21 +1,51 @@
-# cnetNexus Repository Instructions
+# cnetBoot Repository Instructions
 
-## Backend architecture
+## Scope
 
-- Backend modules follow a strict Spring-style dependency direction: `controller -> service -> mapper -> domain`.
-- Controllers own HTTP concerns only: request parsing, authentication context extraction, validation at the transport boundary, invoking one application service, and writing the response.
-- Services own business use cases and orchestration. They must not import HTTP/router modules or write responses.
-- Mappers own persistence contracts and persistence implementation. Mapper code must not import services or controllers.
-- ORM entities and database query projections belong in `domain/`; HTTP request/response contracts belong in `dto/`.
-- Framework-specific request-scoped repository creation belongs in `bootstrap/`, which injects a service resolver into the controller. Controllers must not access mapper registries, repositories, ORM APIs, or the application runtime directly.
-
-## Business-first naming
-
-- Name services after a concrete business use case or domain capability, for example `chart_generation_service`, `authorization_service`, or `reading_service`.
-- Do not name services after transport or implementation mechanics. Generic names such as `batch_service`, `common_service`, `data_service`, `base_service`, `manager_service`, and `helper_service` are forbidden.
-- A class name must still communicate its business responsibility when read without its directory path. If the name only says how data is transported, grouped, cached, or dispatched, rename it before merging.
+cnetBoot is a reusable base application. Its built-in business surface is limited to RBAC,
+authentication/session management, audit, generic AI provider/model integration, and generic Chat.
+Do not add vertical-domain algorithms, entities, prompts, routes, caches, or terminology to the base.
 
 ## Architecture gate
 
-- Any new architecture rule must be enforced in `backend/testing/framework_layering_boundaries.cpp` where it can be checked statically.
-- Do not weaken an existing boundary test to make a build pass; repair the dependency direction instead.
+- Business modules live under `backend/modules/<bounded-context>/`.
+- Within a module, `controller`, `dto`, `service`, `domain`, and `mapper` are sibling directories.
+- DTO declarations and projections belong in `dto/`, never in `controller/`.
+- ORM records are database entities and belong in `domain/`, never in `mapper/`.
+- Mapper code only implements persistence boundaries. It must not depend on Application runtime or
+  use it as a service locator.
+- Controllers adapt HTTP only. Business validation and orchestration belong in a named Service.
+- Services must be named after a concrete use case or capability. Generic names such as
+  `batch_service`, `common_service`, `base_service`, and `manager_service` are forbidden.
+- Cross-cutting HTTP/security helpers belong in `backend/framework`, not in a business controller.
+- The only composition root is `backend/bootstrap`; dependencies are constructor-injected.
+
+## cnetmod usage
+
+- Prefer cnetmod Application modules, typed options, component resolution, ORM repositories, JWT,
+  Redis templates, endpoint metadata, `request_context::with_sse()`, and AI model composition.
+- AI models are enabled explicitly by `ai_module` through `add_chat_model`; configuration alone must
+  not silently activate a capability.
+- Keep provider SDK and `cnetmod.ai` types behind `modules/ai/service/model`. Chat depends on the
+  application-owned `llm_service` contract, not provider clients.
+- Never implement key rotation in cnetmod-facing infrastructure. Provider/key selection is an
+  application policy expressed by the explicitly configured composed model.
+- Never hand-build raw JSON strings. Use DTOs plus cnetmod JSON documents/codecs.
+- Streaming endpoints must enter through `request_context::with_sse()` so total-duration and write
+  watchdogs remain active.
+
+## C++ rules
+
+- Use C++23 modules and `import std;`; do not add standard-library includes.
+- Prefix standard-library symbols with `std::`.
+- Use `cnetmod::task<T>` and `co_await` for asynchronous work; never block an event-loop thread.
+- Use coroutine synchronization primitives, never `std::mutex` or condition variables in coroutine paths.
+- Use `std::expected`/registered application error codes for failures.
+- Use cnetmod logger only; do not add `printf`, iostreams, or ad-hoc console output.
+- Keep module interfaces in `.cppm` and non-template implementations in `.cpp`.
+
+## Required verification
+
+Before committing, build with the same Clang/libc++ toolchain as cnetmod and run CTest. The
+`cnetboot_framework_layering_boundaries` test is mandatory and must continue to reject vertical
+business leakage, DTOs in controllers, ORM records in mappers, and generic service names.

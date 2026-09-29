@@ -5,19 +5,19 @@ import cnetmod.io.io_context;
 import cnetmod.json;
 import cnetmod.protocol.http;
 import cnetmod.security.jwt;
-import cnetnexus.framework.security.authorization;
-import cnetnexus.framework.security.current_user;
-import cnetnexus.framework.security.jwt_security;
+import cnetboot.framework.security.authorization;
+import cnetboot.framework.security.current_user;
+import cnetboot.framework.security.jwt_security;
 
 auto main() -> int
 {
     const auto session_id = cnetmod::security::generate_secure_token(16);
     if (session_id.size() != 32 ||
-        cnetnexus::security::jwt_session_key(session_id) !=
-            "cnetnexus:jwt:session:{sessions}:" + session_id)
+        cnetboot::security::jwt_session_key(session_id) !=
+            "cnetboot:jwt:session:{sessions}:" + session_id)
         return 4;
 
-    const cnetnexus::security::jwt_session_record session{
+    const cnetboot::security::jwt_session_record session{
         .user_id = 42,
         .username = "alice",
         .department_id = 7,
@@ -26,20 +26,20 @@ auto main() -> int
     if (!encoded)
         return 5;
     const auto decoded = cnetmod::json::parse<
-        cnetnexus::security::jwt_session_record>(*encoded);
+        cnetboot::security::jwt_session_record>(*encoded);
     if (!decoded || decoded->user_id != session.user_id ||
         decoded->username != session.username ||
         decoded->department_id != session.department_id)
         return 6;
 
     cnetmod::http::request_scope scope;
-    scope.bind(std::make_shared<cnetnexus::security::current_user>(
-        cnetnexus::security::current_user{
+    scope.bind(std::make_shared<cnetboot::security::current_user>(
+        cnetboot::security::current_user{
             .id = 42,
             .username = "alice",
             .permissions = {"system:user:list"},
         }));
-    const auto* current = scope.find<cnetnexus::security::current_user>();
+    const auto* current = scope.find<cnetboot::security::current_user>();
     if (!current || current->id != 42 || current->username != "alice" ||
         current->permissions != std::vector<std::string>{"system:user:list"})
         return 1;
@@ -56,15 +56,15 @@ auto main() -> int
         endpoint->method = cnetmod::http::http_method::GET;
         endpoint->pattern = "/api/system/users";
         endpoint->metadata =
-            cnetnexus::security::requires_permission(std::move(permission));
+            cnetboot::security::requires_permission(std::move(permission));
         params.matched = std::move(endpoint);
         cnetmod::http::request_context request{
             *io, peer, "GET", "/api/system/users", headers, {}, response,
             std::move(params)};
-        request.scope().bind(std::make_shared<cnetnexus::security::current_user>(
+        request.scope().bind(std::make_shared<cnetboot::security::current_user>(
             *current));
         bool called = false;
-        auto middleware = cnetnexus::security::authorization_middleware();
+        auto middleware = cnetboot::security::authorization_middleware();
         cnetmod::sync_wait(middleware(request,
             [&called]() -> cnetmod::task<void>
             {

@@ -6,19 +6,19 @@
  *  - Redis 不可达：两者都返回 DEPENDENCY.UNAVAILABLE（fail closed），不放行。
  *
  * 连不上 Redis 时返回 77，由 CTest 的 SKIP_RETURN_CODE 记为 Skipped。
- * 可用 CNETNEXUS_TEST_REDIS_HOST / CNETNEXUS_TEST_REDIS_PORT 覆盖地址。
+ * 可用 CNETBOOT_TEST_REDIS_HOST / CNETBOOT_TEST_REDIS_PORT 覆盖地址。
  */
 import std;
 import cnetmod.coro;
 import cnetmod.io;
 import cnetmod.protocol.redis;
-import cnetnexus.framework.error;
-import cnetnexus.framework.security.jwt_security;
-import cnetnexus.system.service.login_guard;
+import cnetboot.framework.error;
+import cnetboot.framework.security.jwt_security;
+import cnetboot.system.service.login_guard;
 
 namespace {
 
-using error_code = cnetnexus::framework::error::error_code;
+using error_code = cnetboot::framework::error::error_code;
 constexpr int k_skipped = 77;
 
 auto environment_or(const char* name, std::string fallback) -> std::string
@@ -42,7 +42,7 @@ auto pool_parameters(std::string host, std::uint16_t port) -> cnetmod::redis::po
 /// @brief 每次运行独占一个键命名空间，互不污染；残留键随 TTL 过期。
 auto unique_prefix() -> std::string
 {
-    return std::format("cnetnexus-test:{}:identity:",
+    return std::format("cnetboot-test:{}:identity:",
         std::chrono::steady_clock::now().time_since_epoch().count());
 }
 
@@ -97,8 +97,8 @@ void run_with_pool(cnetmod::io_context& io, cnetmod::redis::pool_params params, 
 auto exercise_guard(std::shared_ptr<cnetmod::redis::redis_template> store,
     assertions& expect) -> cnetmod::task<void>
 {
-    cnetnexus::system::login_guard guard{store,
-        cnetnexus::system::login_protection_options{
+    cnetboot::system::login_guard guard{store,
+        cnetboot::system::login_protection_options{
             .max_account_failures = 2,
             .max_client_failures = 3,
             .window_seconds = 60,
@@ -135,8 +135,8 @@ auto exercise_guard(std::shared_ptr<cnetmod::redis::redis_template> store,
 auto exercise_sessions(std::shared_ptr<cnetmod::redis::redis_template> store,
     assertions& expect) -> cnetmod::task<void>
 {
-    cnetnexus::security::jwt_session_store sessions{store, std::chrono::seconds{60}};
-    const cnetnexus::security::jwt_session_record record{
+    cnetboot::security::jwt_session_store sessions{store, std::chrono::seconds{60}};
+    const cnetboot::security::jwt_session_record record{
         .user_id = 42, .username = "alice", .department_id = 7};
 
     auto opened = co_await sessions.open(record);
@@ -174,9 +174,9 @@ auto exercise_sessions(std::shared_ptr<cnetmod::redis::redis_template> store,
 
 auto main() -> int
 {
-    const auto host = environment_or("CNETNEXUS_TEST_REDIS_HOST", "127.0.0.1");
+    const auto host = environment_or("CNETBOOT_TEST_REDIS_HOST", "127.0.0.1");
     const auto port = static_cast<std::uint16_t>(
-        std::stoi(environment_or("CNETNEXUS_TEST_REDIS_PORT", "6379")));
+        std::stoi(environment_or("CNETBOOT_TEST_REDIS_PORT", "6379")));
     auto io = cnetmod::make_io_context();
     if (!io)
         return 1;
@@ -187,7 +187,7 @@ auto main() -> int
         [&](cnetmod::redis::connection_pool& pool) -> cnetmod::task<void>
         {
             cnetmod::redis::redis_template probe{pool, {}, {}, {}, io.get()};
-            reachable = (co_await probe.get("cnetnexus-test:probe")).has_value();
+            reachable = (co_await probe.get("cnetboot-test:probe")).has_value();
             if (!reachable)
                 co_return;
             auto store = std::make_shared<cnetmod::redis::redis_template>(
@@ -209,11 +209,11 @@ auto main() -> int
             auto store = std::make_shared<cnetmod::redis::redis_template>(
                 cnetmod::redis::redis_template{pool, {.ns = {.prefix = unique_prefix()}},
                     {}, {}, io.get()});
-            cnetnexus::system::login_guard guard{store, {}};
+            cnetboot::system::login_guard guard{store, {}};
             const auto admitted = co_await guard.admit("alice", "203.0.113.10");
             expect.check(!admitted && admitted.error() == error_code::upstream_unavailable,
                 "login guard fails closed without Redis");
-            cnetnexus::security::jwt_session_store sessions{store, std::chrono::seconds{60}};
+            cnetboot::security::jwt_session_store sessions{store, std::chrono::seconds{60}};
             const auto touched = co_await sessions.touch(std::string(32, 'a'));
             expect.check(!touched && touched.error() == error_code::upstream_unavailable,
                 "session lookup fails closed without Redis");

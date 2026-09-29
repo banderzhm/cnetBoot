@@ -1,9 +1,9 @@
-module cnetnexus.system.dto.user;
+module cnetboot.system.dto.user;
 
 import cnetmod.json;
-import cnetnexus.framework.pagination;
+import cnetboot.framework.pagination;
 
-namespace cnetnexus::system {
+namespace cnetboot::system {
 
 auto to_document(const user_dto& value) -> cnetmod::json::document
 {
@@ -15,7 +15,7 @@ auto to_document(const user_dto& value) -> cnetmod::json::document
 }
 
 auto to_document(
-    const cnetnexus::framework::pagination::page_result<user_dto>& value)
+    const cnetboot::framework::pagination::page_result<user_dto>& value)
     -> cnetmod::json::document
 {
     auto rows = cnetmod::json::array();
@@ -27,4 +27,4 @@ auto to_document(
         {"pageSize", value.page_size}});
 }
 
-} // namespace cnetnexus::system
+} // namespace cnetboot::system

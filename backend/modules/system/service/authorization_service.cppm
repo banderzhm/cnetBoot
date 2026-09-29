@@ -1,19 +1,19 @@
-export module cnetnexus.system.service.authorization_service;
+export module cnetboot.system.service.authorization_service;
 
 import std;
 import cnetmod.application;
 import cnetmod.coro.task;
 import cnetmod.orm;
-import cnetnexus.framework.error;
-import cnetnexus.system.dto.authorization;
-import cnetnexus.system.domain.sys_dept;
-import cnetnexus.system.domain.sys_role;
-import cnetnexus.system.domain.sys_role_dept;
-import cnetnexus.system.mapper.menu;
-import cnetnexus.system.mapper.registry;
-import cnetnexus.system.mapper.role;
+import cnetboot.framework.error;
+import cnetboot.system.dto.authorization;
+import cnetboot.system.domain.sys_dept;
+import cnetboot.system.domain.sys_role;
+import cnetboot.system.domain.sys_role_dept;
+import cnetboot.system.mapper.menu;
+import cnetboot.system.mapper.registry;
+import cnetboot.system.mapper.role;
 
-export namespace cnetnexus::system {
+export namespace cnetboot::system {
 
 struct principal_authorization
 {
@@ -32,10 +32,10 @@ public:
         std::shared_ptr<system_mapper_registry> registry);
 
     [[nodiscard]] auto authorization(std::int64_t user_id)
-        -> cnetmod::task<std::expected<authorization_dto, cnetnexus::framework::error::error_code>>;
+        -> cnetmod::task<std::expected<authorization_dto, cnetboot::framework::error::error_code>>;
     [[nodiscard]] auto principal(std::int64_t user_id,
         std::int64_t department_id)
-        -> cnetmod::task<std::expected<principal_authorization, cnetnexus::framework::error::error_code>>;
+        -> cnetmod::task<std::expected<principal_authorization, cnetboot::framework::error::error_code>>;
 
 private:
     enum class department_selection
@@ -57,11 +57,11 @@ private:
     std::shared_ptr<system_mapper_registry> registry_;
 
     [[nodiscard]] auto load(std::int64_t user_id)
-        -> cnetmod::task<std::expected<snapshot, cnetnexus::framework::error::error_code>>;
+        -> cnetmod::task<std::expected<snapshot, cnetboot::framework::error::error_code>>;
     [[nodiscard]] auto visible_departments(
         const std::vector<std::int64_t>& roots,
         department_selection selection)
-        -> cnetmod::task<std::expected<std::vector<std::int64_t>, cnetnexus::framework::error::error_code>>;
+        -> cnetmod::task<std::expected<std::vector<std::int64_t>, cnetboot::framework::error::error_code>>;
 };
 
-} // namespace cnetnexus::system
+} // namespace cnetboot::system

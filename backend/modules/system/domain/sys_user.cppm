@@ -2,12 +2,12 @@ module;
 
 #include <cnetmod/orm.hpp>
 
-export module cnetnexus.system.domain.sys_user;
+export module cnetboot.system.domain.sys_user;
 
 import std;
 import cnetmod.orm;
 
-export namespace cnetnexus::system {
+export namespace cnetboot::system {
 
 /**
  * @brief Persistent system user managed by cnetmod ORM policies.
@@ -26,9 +26,9 @@ struct sys_user {
   cnetmod::orm::calendar_datetime updated_at{};
 };
 
-} // namespace cnetnexus::system
+} // namespace cnetboot::system
 
-CNETMOD_MODEL(cnetnexus::system::sys_user, "sys_user",
+CNETMOD_MODEL(cnetboot::system::sys_user, "sys_user",
     CNETMOD_FIELD(user_id, "user_id", bigint, PK | AUTO_INC | DATA_OWNER),
     CNETMOD_FIELD(dept_id, "dept_id", bigint, DATA_PARTITION),
               CNETMOD_FIELD(user_name, "user_name", varchar),

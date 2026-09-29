@@ -2,31 +2,31 @@ module;
 
 #include <cnetmod/json_codec.hpp>
 
-module cnetnexus.chat.controller.chat_route_context;
+module cnetboot.chat.controller.chat_route_context;
 
 import std;
-import cnetnexus.framework.web.response;
+import cnetboot.framework.web.response;
 import cnetmod.coro.task;
 import cnetmod.json;
 import cnetmod.protocol.http;
-import cnetnexus.chat.dto.chat;
-import cnetnexus.chat.controller.chat_routes;
-import cnetnexus.chat.domain.chat_domain;
-import cnetnexus.chat.service.chat_service;
-import cnetnexus.chart.controller.route_support;
-import cnetnexus.framework.error;
-import cnetnexus.framework.security.current_user;
-import cnetnexus.framework.security.authorization;
-import cnetnexus.framework.security.current_user;
-import cnetnexus.framework.web.error_response;
-import cnetnexus.framework.pagination;
-import cnetnexus.framework.web.query;
-import cnetnexus.framework.web.sse_stream;
+import cnetboot.chat.dto.chat;
+import cnetboot.chat.controller.chat_routes;
+import cnetboot.chat.domain.chat_domain;
+import cnetboot.chat.service.chat_service;
+import cnetboot.framework.security.request_identity;
+import cnetboot.framework.error;
+import cnetboot.framework.security.current_user;
+import cnetboot.framework.security.authorization;
+import cnetboot.framework.security.current_user;
+import cnetboot.framework.web.error_response;
+import cnetboot.framework.pagination;
+import cnetboot.framework.web.query;
+import cnetboot.framework.web.sse_stream;
 
-namespace cnetnexus::chat::detail {
+namespace cnetboot::chat::detail {
 
-namespace error = cnetnexus::framework::error;
-namespace web = cnetnexus::framework::web;
+namespace error = cnetboot::framework::error;
+namespace web = cnetboot::framework::web;
 
 // 具名响应体必须有外部链接：Glaze 的字段名反射要求类型具备链接性。
 struct done_response {
@@ -39,13 +39,13 @@ struct done_response {
 namespace {
 
 [[nodiscard]] auto page_from(std::string_view raw)
-    -> cnetnexus::framework::pagination::page_request {
-  cnetnexus::framework::pagination::page_request page;
+    -> cnetboot::framework::pagination::page_request {
+  cnetboot::framework::pagination::page_request page;
   page.page = web::query::integer(raw, "page").value_or(1);
   page.page_size =
       web::query::integer(raw, "page_size").value_or(
-          cnetnexus::framework::pagination::default_page_size);
-  return cnetnexus::framework::pagination::normalize(page);
+          cnetboot::framework::pagination::default_page_size);
+  return cnetboot::framework::pagination::normalize(page);
 }
 
 } // namespace
@@ -55,17 +55,17 @@ auto chat_delta_payload(std::string_view text) -> std::string {
   return web::sse_delta_payload(text);
 }
 
-auto chat_done_payload(const cnetnexus::chat::chat_message &message)
+auto chat_done_payload(const cnetboot::chat::chat_message &message)
     -> std::string {
   const auto payload =
       cnetmod::json::write(done_response{.messageId = message.id,
                                          .content = message.content,
                                          .tokensIn = message.tokens_in,
                                          .tokensOut = message.tokens_out});
-  return payload.value_or(std::string{"{}"});
+  return payload.value_or(std::string{});
 }
 
-auto normalize_chart_context(
+auto normalize_reference_context(
     const std::optional<cnetmod::json::raw_value> &input)
     -> chat_context_field {
   chat_context_field result;
@@ -97,10 +97,10 @@ auto normalize_chart_context(
   }
 
   // 上限按字符数（Unicode 码点）而不是字节数：中文 1 字 = 1。
-  result.characters = cnetnexus::chat::count_characters(result.value);
+  result.characters = cnetboot::chat::count_characters(result.value);
   if (result.value.empty())
     return result;
-  if (result.characters > cnetnexus::chat::max_chart_context_characters) {
+  if (result.characters > cnetboot::chat::max_reference_context_characters) {
     result.status = chat_context_status::too_large;
     return result;
   }
@@ -117,18 +117,18 @@ auto handle_session_create(cnetmod::http::request_context &context,
     co_return;
   }
   auto &chat = (*scope)->service;
-  const auto *principal = cnetnexus::chart::current_principal(context);
+  const auto *principal = cnetboot::security::current_principal(context);
 
   auto body =
-      cnetmod::json::parse_lenient<cnetnexus::chat::dto::chat_session_request>(
+      cnetmod::json::parse_lenient<cnetboot::chat::dto::chat_session_request>(
           co_await context.read_full_body());
   if (!body) {
     web::respond_error(context, error::error_code::request_invalid_argument);
     co_return;
   }
 
-  cnetnexus::chat::chat_session_create_request request;
-  request.algorithm = body->algorithm.value_or("");
+  cnetboot::chat::chat_session_create_request request;
+  request.category = body->category.value_or("");
   request.title = body->title.value_or("");
   request.system_prompt = body->systemPrompt.value_or("");
   request.model = body->model.value_or("");
@@ -138,14 +138,14 @@ auto handle_session_create(cnetmod::http::request_context &context,
   }
 
   const auto created = co_await chat.create_session(
-      request, cnetnexus::chart::audit_actor_from(context, principal));
+      request, cnetboot::security::audit_actor_from(context, principal));
   if (!created) {
     web::respond_error(context, created.error());
     co_return;
   }
-  cnetnexus::framework::web::respond_document(
-      context, cnetnexus::chat::dto::to_document(
-                   cnetnexus::chat::dto::project(*created)));
+  cnetboot::framework::web::respond_document(
+      context, cnetboot::chat::dto::to_document(
+                   cnetboot::chat::dto::project(*created)));
   co_return;
 }
 
@@ -159,8 +159,8 @@ auto handle_session_list(cnetmod::http::request_context &context,
   }
   auto &chat = (*scope)->service;
   const auto raw = context.query_string();
-  cnetnexus::chat::chat_session_query filter;
-  filter.algorithm = web::query::value(raw, "algorithm").value_or("");
+  cnetboot::chat::chat_session_query filter;
+  filter.category = web::query::value(raw, "category").value_or("");
   filter.page = page_from(raw);
 
   const auto result = co_await chat.list_sessions(filter);
@@ -169,14 +169,14 @@ auto handle_session_list(cnetmod::http::request_context &context,
     co_return;
   }
   const auto page =
-      cnetnexus::chat::dto::project_chat_page(*result, [](const auto &value) {
-        return cnetnexus::chat::dto::project(value);
+      cnetboot::chat::dto::project_chat_page(*result, [](const auto &value) {
+        return cnetboot::chat::dto::project(value);
       });
-  cnetnexus::framework::web::respond_document(
+  cnetboot::framework::web::respond_document(
       context,
-      cnetnexus::chat::dto::page_document(
-          page, [](const cnetnexus::chat::dto::chat_session_response &value) {
-            return cnetnexus::chat::dto::to_document(value);
+      cnetboot::chat::dto::page_document(
+          page, [](const cnetboot::chat::dto::chat_session_response &value) {
+            return cnetboot::chat::dto::to_document(value);
           }));
   co_return;
 }
@@ -200,9 +200,9 @@ auto handle_session_read(cnetmod::http::request_context &context,
     web::respond_error(context, found.error());
     co_return;
   }
-  cnetnexus::framework::web::respond_document(
+  cnetboot::framework::web::respond_document(
       context,
-      cnetnexus::chat::dto::to_document(cnetnexus::chat::dto::project(*found)));
+      cnetboot::chat::dto::to_document(cnetboot::chat::dto::project(*found)));
   co_return;
 }
 
@@ -215,7 +215,7 @@ auto handle_session_update(cnetmod::http::request_context &context,
     co_return;
   }
   auto &chat = (*scope)->service;
-  const auto *principal = cnetnexus::chart::current_principal(context);
+  const auto *principal = cnetboot::security::current_principal(context);
   const auto id = web::query::path_id(context.param("id"));
   if (!id) {
     web::respond_error(context, error::error_code::request_invalid_argument);
@@ -223,14 +223,14 @@ auto handle_session_update(cnetmod::http::request_context &context,
   }
 
   auto body =
-      cnetmod::json::parse_lenient<cnetnexus::chat::dto::chat_session_request>(
+      cnetmod::json::parse_lenient<cnetboot::chat::dto::chat_session_request>(
           co_await context.read_full_body());
   if (!body) {
     web::respond_error(context, error::error_code::request_invalid_argument);
     co_return;
   }
 
-  cnetnexus::chat::chat_session_patch patch;
+  cnetboot::chat::chat_session_patch patch;
   if (body->title) {
     patch.has_title = true;
     patch.title = *body->title;
@@ -249,14 +249,14 @@ auto handle_session_update(cnetmod::http::request_context &context,
   }
 
   const auto updated = co_await chat.update_session(
-      *id, patch, cnetnexus::chart::audit_actor_from(context, principal));
+      *id, patch, cnetboot::security::audit_actor_from(context, principal));
   if (!updated) {
     web::respond_error(context, updated.error());
     co_return;
   }
-  cnetnexus::framework::web::respond_document(
-      context, cnetnexus::chat::dto::to_document(
-                   cnetnexus::chat::dto::project(*updated)));
+  cnetboot::framework::web::respond_document(
+      context, cnetboot::chat::dto::to_document(
+                   cnetboot::chat::dto::project(*updated)));
   co_return;
 }
 
@@ -269,19 +269,19 @@ auto handle_session_delete(cnetmod::http::request_context &context,
     co_return;
   }
   auto &chat = (*scope)->service;
-  const auto *principal = cnetnexus::chart::current_principal(context);
+  const auto *principal = cnetboot::security::current_principal(context);
   const auto id = web::query::path_id(context.param("id"));
   if (!id) {
     web::respond_error(context, error::error_code::request_invalid_argument);
     co_return;
   }
   const auto removed = co_await chat.remove_session(
-      *id, cnetnexus::chart::audit_actor_from(context, principal));
+      *id, cnetboot::security::audit_actor_from(context, principal));
   if (!removed) {
     web::respond_error(context, removed.error());
     co_return;
   }
-  cnetnexus::framework::web::respond_document(
+  cnetboot::framework::web::respond_document(
       context, cnetmod::json::object({{"success", true}}));
   co_return;
 }
@@ -307,14 +307,14 @@ auto handle_message_list(cnetmod::http::request_context &context,
     co_return;
   }
   const auto page =
-      cnetnexus::chat::dto::project_chat_page(*result, [](const auto &value) {
-        return cnetnexus::chat::dto::project(value);
+      cnetboot::chat::dto::project_chat_page(*result, [](const auto &value) {
+        return cnetboot::chat::dto::project(value);
       });
-  cnetnexus::framework::web::respond_document(
+  cnetboot::framework::web::respond_document(
       context,
-      cnetnexus::chat::dto::page_document(
-          page, [](const cnetnexus::chat::dto::chat_message_response &value) {
-            return cnetnexus::chat::dto::to_document(value);
+      cnetboot::chat::dto::page_document(
+          page, [](const cnetboot::chat::dto::chat_message_response &value) {
+            return cnetboot::chat::dto::to_document(value);
           }));
   co_return;
 }
@@ -328,7 +328,7 @@ auto handle_message_send(cnetmod::http::request_context &context,
     co_return;
   }
   auto &chat = (*scope)->service;
-  const auto *principal = cnetnexus::chart::current_principal(context);
+  const auto *principal = cnetboot::security::current_principal(context);
   const auto id = web::query::path_id(context.param("id"));
   if (!id) {
     web::respond_error(context, error::error_code::request_invalid_argument);
@@ -336,7 +336,7 @@ auto handle_message_send(cnetmod::http::request_context &context,
   }
 
   auto body =
-      cnetmod::json::parse_lenient<cnetnexus::chat::dto::chat_message_request>(
+      cnetmod::json::parse_lenient<cnetboot::chat::dto::chat_message_request>(
           co_await context.read_full_body());
   if (!body) {
     web::respond_error(context, error::error_code::request_invalid_argument);
@@ -352,28 +352,28 @@ auto handle_message_send(cnetmod::http::request_context &context,
                        "content 不能为空");
     co_return;
   }
-  if (const auto characters = cnetnexus::chat::count_characters(*body->content);
-      characters > cnetnexus::chat::max_message_characters) {
+  if (const auto characters = cnetboot::chat::count_characters(*body->content);
+      characters > cnetboot::chat::max_message_characters) {
     web::respond_error(context, error::error_code::request_invalid_argument,
                        std::format("内容过长（{} 字，上限 {} 字）", characters,
-                                   cnetnexus::chat::max_message_characters));
+                                   cnetboot::chat::max_message_characters));
     co_return;
   }
 
-  // chartContext 接受 string | object | array；对象/数组归一化成紧凑 JSON
+  // context 接受 string | object | array；对象/数组归一化成紧凑 JSON
   // 文本。
-  const auto chart_context = normalize_chart_context(body->chartContext);
-  switch (chart_context.status) {
+  const auto reference_context = normalize_reference_context(body->context);
+  switch (reference_context.status) {
   case chat_context_status::invalid_type:
     web::respond_error(context, error::error_code::request_invalid_argument,
-                       "chartContext 只接受字符串或 JSON 对象/数组");
+                       "context 只接受字符串或 JSON 对象/数组");
     co_return;
   case chat_context_status::too_large:
     web::respond_error(
         context, error::error_code::request_invalid_argument,
-        std::format("盘面摘要过大（{} 字，上限 {} 字）",
-                    chart_context.characters,
-                    cnetnexus::chat::max_chart_context_characters));
+        std::format("参考上下文过大（{} 字，上限 {} 字）",
+                    reference_context.characters,
+                    cnetboot::chat::max_reference_context_characters));
     co_return;
   case chat_context_status::absent:
   case chat_context_status::text:
@@ -382,10 +382,10 @@ auto handle_message_send(cnetmod::http::request_context &context,
 
   const auto stream = body->stream.value_or(true);
 
-  cnetnexus::chat::chat_message_request request;
+  cnetboot::chat::chat_message_request request;
   request.content = *body->content;
-  request.chart_context = chart_context.value;
-  const auto actor = cnetnexus::chart::audit_actor_from(context, principal);
+  request.reference_context = reference_context.value;
+  const auto actor = cnetboot::security::audit_actor_from(context, principal);
 
   if (!stream) {
     const auto turn = co_await chat.send_message(*id, request, actor);
@@ -393,12 +393,12 @@ auto handle_message_send(cnetmod::http::request_context &context,
       web::respond_error(context, turn.error());
       co_return;
     }
-    cnetnexus::framework::web::respond_document(
+    cnetboot::framework::web::respond_document(
         context,
         cnetmod::json::object(
             {{"message",
-              cnetnexus::chat::dto::to_document(
-                  cnetnexus::chat::dto::project(turn->assistant_message))}}));
+              cnetboot::chat::dto::to_document(
+                  cnetboot::chat::dto::project(turn->assistant_message))}}));
     co_return;
   }
 
@@ -431,4 +431,4 @@ auto handle_message_send(cnetmod::http::request_context &context,
   co_return;
 }
 
-} // namespace cnetnexus::chat::detail
+} // namespace cnetboot::chat::detail

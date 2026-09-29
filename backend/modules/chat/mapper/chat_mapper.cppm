@@ -12,21 +12,21 @@
  * 写入与读取的会话存在性口径不同：追加要求会话存在（返回 CHAT.SESSION_NOT_FOUND），
  * 读取与清理是幂等的（没有记录 = 空页 / 0 条 / 删除成功）。
  */
-export module cnetnexus.chat.mapper.chat_mapper;
+export module cnetboot.chat.mapper.chat_mapper;
 
 import std;
 import cnetmod.application;
 import cnetmod.coro.task;
 import cnetmod.orm;
-import cnetnexus.chat.domain.chat_domain;
-import cnetnexus.chat.domain.chat_record;
-import cnetnexus.framework.error;
-import cnetnexus.framework.pagination;
+import cnetboot.chat.domain.chat_domain;
+import cnetboot.chat.domain.chat_record;
+import cnetboot.framework.error;
+import cnetboot.framework.pagination;
 
-export namespace cnetnexus::chat {
+export namespace cnetboot::chat {
 
-namespace pagination = cnetnexus::framework::pagination;
-namespace error = cnetnexus::framework::error;
+namespace pagination = cnetboot::framework::pagination;
+namespace error = cnetboot::framework::error;
 
 /** @brief 会话与消息的 MySQL 映射器（chat_session / chat_message 两张表）。
  *
@@ -92,4 +92,4 @@ private:
 [[nodiscard]] auto validate_chat_mapper_registry(const cnetmod::orm::mapper_registry& registry)
     -> std::expected<void, std::string>;
 
-} // namespace cnetnexus::chat
+} // namespace cnetboot::chat

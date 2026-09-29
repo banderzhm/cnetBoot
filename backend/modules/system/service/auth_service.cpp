@@ -1,23 +1,23 @@
-module cnetnexus.system.service.auth_service;
+module cnetboot.system.service.auth_service;
 
 import std;
 import cnetmod.application;
 import cnetmod.orm;
 import cnetmod.security.jwt;
 import cnetmod.security.password;
-import cnetnexus.framework.error;
-import cnetnexus.framework.security.jwt_security;
-import cnetnexus.system.domain.sys_user;
-import cnetnexus.system.dto.auth;
-import cnetnexus.system.service.login_guard;
+import cnetboot.framework.error;
+import cnetboot.framework.security.jwt_security;
+import cnetboot.system.domain.sys_user;
+import cnetboot.system.dto.auth;
+import cnetboot.system.service.login_guard;
 
-namespace cnetnexus::system {
+namespace cnetboot::system {
 
-using error_code = cnetnexus::framework::error::error_code;
+using error_code = cnetboot::framework::error::error_code;
 
 auth_service::auth_service(cnetmod::application::application_runtime& runtime,
     std::shared_ptr<cnetmod::application::managed_repository<sys_user>> users,
-    std::shared_ptr<cnetnexus::security::jwt_session_store> sessions,
+    std::shared_ptr<cnetboot::security::jwt_session_store> sessions,
     std::shared_ptr<login_guard> guard,
     std::string decoy_password_hash) noexcept
     : runtime_{&runtime}, users_{std::move(users)}, sessions_{std::move(sessions)},
@@ -80,7 +80,7 @@ auto auth_service::login(login_request credentials, std::string client)
         co_return std::unexpected{error_code::auth_account_disabled};
     co_await guard_->record_success(credentials.username);
 
-    auto session = co_await sessions_->open(cnetnexus::security::jwt_session_record{
+    auto session = co_await sessions_->open(cnetboot::security::jwt_session_record{
         .user_id = user->user_id,
         .username = user->user_name,
         .department_id = user->dept_id,
@@ -95,7 +95,7 @@ auto auth_service::refresh(std::int64_t user_id, std::string username,
     -> cnetmod::task<std::expected<token_response, error_code>>
 {
     auto rotated = co_await sessions_->rotate(session_id,
-        cnetnexus::security::jwt_session_record{
+        cnetboot::security::jwt_session_record{
             .user_id = user_id,
             .username = std::move(username),
             .department_id = department_id,
@@ -114,4 +114,4 @@ auto auth_service::logout(std::string session_id)
     co_return std::expected<void, error_code>{};
 }
 
-} // namespace cnetnexus::system
+} // namespace cnetboot::system

@@ -1,7 +1,7 @@
 import std;
 import cnetmod.application.yaml_configuration;
 import cnetmod.json;
-import cnetnexus.framework.error;
+import cnetboot.framework.error;
 
 namespace {
 
@@ -15,7 +15,7 @@ auto member(const json::document& source, std::string_view key) -> const json::d
 
 /// @brief 逐字段比对 YAML 登记项与 C++ 注册表项。
 auto matches(const json::document& entry,
-    const cnetnexus::framework::error::error_entry& registered) -> bool
+    const cnetboot::framework::error::error_entry& registered) -> bool
 {
     const auto* code = member(entry, "code");
     const auto* status = member(entry, "httpStatus");
@@ -43,8 +43,8 @@ auto matches(const json::document& entry,
 // 契约用例：backend/contracts/error_codes.yaml 与 C++ 注册表必须一一对应，
 // 无缺项也无多余项。依赖 CTest 的 WORKING_DIRECTORY 指向 backend/。
 //
-// 迁移自 xuanxue-algorithm tests/error_code_contract_test.cpp。两处口径变化：
-//  - 玄学用 nlohmann::json 读 YAML 文档，CNetNexus 用 cnetmod.json（同一份文档、
+// 迁移自 legacy application tests/error_code_contract_test.cpp。两处口径变化：
+//  - 玄学用 nlohmann::json 读 YAML 文档，cnetBoot 用 cnetmod.json（同一份文档、
 //    同一套 find()/get()/as() 取值口径），因此这里不 import nlohmann.json；
 //  - 契约文件随仓库搬到 backend/contracts/error_codes.yaml。
 auto main() -> int
@@ -56,7 +56,7 @@ auto main() -> int
     if (found == nullptr || !found->is_array())
         return 2;
 
-    const auto registered = cnetnexus::framework::error::registry();
+    const auto registered = cnetboot::framework::error::registry();
     if (found->get_array().size() != registered.size())
         return 3;
 
@@ -67,7 +67,7 @@ auto main() -> int
         if (code == nullptr)
             return 4;
         const auto name = code->get<std::string>();
-        const auto match = cnetnexus::framework::error::find(name);
+        const auto match = cnetboot::framework::error::find(name);
         if (!match || !matches(entry, *match))
             return 4;
     }
@@ -86,7 +86,7 @@ auto main() -> int
     }
 
     // 3. 注册表本身的结构校验。
-    if (const auto valid = cnetnexus::framework::error::validate(); !valid)
+    if (const auto valid = cnetboot::framework::error::validate(); !valid)
         return 6;
     return 0;
 }

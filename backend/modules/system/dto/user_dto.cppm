@@ -1,10 +1,10 @@
-export module cnetnexus.system.dto.user;
+export module cnetboot.system.dto.user;
 
 import std;
 import cnetmod.json;
-import cnetnexus.framework.pagination;
+import cnetboot.framework.pagination;
 
-export namespace cnetnexus::system {
+export namespace cnetboot::system {
 
 /**
  * @brief Public system-user representation returned by administration APIs.
@@ -23,7 +23,7 @@ struct user_dto
 [[nodiscard]] auto to_document(const user_dto& value)
     -> cnetmod::json::document;
 [[nodiscard]] auto to_document(
-    const cnetnexus::framework::pagination::page_result<user_dto>& value)
+    const cnetboot::framework::pagination::page_result<user_dto>& value)
     -> cnetmod::json::document;
 
-} // namespace cnetnexus::system
+} // namespace cnetboot::system

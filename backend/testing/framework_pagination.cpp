@@ -1,8 +1,8 @@
-import cnetnexus.framework.pagination;
+import cnetboot.framework.pagination;
 
 auto main() -> int
 {
-    namespace pagination = cnetnexus::framework::pagination;
+    namespace pagination = cnetboot::framework::pagination;
 
     const auto defaults = pagination::normalize({.page = 0, .page_size = 0});
     if (defaults.page != 1 ||

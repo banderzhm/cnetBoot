@@ -3,12 +3,12 @@
  *
  * 配置文件由 cnetmod Application 加载与解码；本单元只做校验与纯逻辑解析。
  */
-module cnetnexus.framework.config.llm_settings;
+module cnetboot.framework.config.llm_settings;
 
 import std;
 import cnetmod.application.configuration;
 
-namespace cnetnexus::framework::config {
+namespace cnetboot::framework::config {
 namespace {
 
     using service_table =
@@ -300,4 +300,4 @@ auto llm_provider_catalog(const llm_directory& directory)
     return catalog;
 }
 
-} // namespace cnetnexus::framework::config
+} // namespace cnetboot::framework::config

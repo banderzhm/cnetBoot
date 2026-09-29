@@ -1,8 +1,8 @@
-module cnetnexus.system.dto.auth;
+module cnetboot.system.dto.auth;
 
 import cnetmod.json;
 
-namespace cnetnexus::system {
+namespace cnetboot::system {
 
 auto to_document(const token_response& value) -> cnetmod::json::document
 {
@@ -18,4 +18,4 @@ auto revoked_document() -> cnetmod::json::document
     return cnetmod::json::object({{"revoked", true}});
 }
 
-} // namespace cnetnexus::system
+} // namespace cnetboot::system

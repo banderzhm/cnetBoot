@@ -1,15 +1,15 @@
-module cnetnexus.framework.security.authorization;
+module cnetboot.framework.security.authorization;
 
 import std;
 import cnetmod.coro.task;
 import cnetmod.orm;
 import cnetmod.protocol.http;
 import cnetmod.protocol.http.middleware.authorization;
-import cnetnexus.framework.security.current_user;
-import cnetnexus.framework.error;
-import cnetnexus.framework.web.error_response;
+import cnetboot.framework.security.current_user;
+import cnetboot.framework.error;
+import cnetboot.framework.web.error_response;
 
-namespace cnetnexus::security {
+namespace cnetboot::security {
 namespace {
 
     [[nodiscard]] auto permits(const current_user& user,
@@ -36,7 +36,7 @@ namespace {
         return value;
     }
 
-    using error_code = cnetnexus::framework::error::error_code;
+    using error_code = cnetboot::framework::error::error_code;
 
     /// @brief cnetmod authorize() 的稳定失败码 -> 注册错误码。
     [[nodiscard]] auto code_for(std::string_view failure) noexcept -> error_code
@@ -79,7 +79,7 @@ auto authorization_middleware() -> cnetmod::http::middleware_fn
         .on_failure = [](cnetmod::http::request_context& request, int,
                           std::string_view code)
         {
-            cnetnexus::framework::web::respond_error(request, code_for(code));
+            cnetboot::framework::web::respond_error(request, code_for(code));
         },
     });
 }
@@ -106,14 +106,14 @@ auto require_self_or_permission(std::string parameter, std::string permission,
         const auto* current = request.scope().find<current_user>();
         if (!current)
         {
-            cnetnexus::framework::web::respond_error(request,
+            cnetboot::framework::web::respond_error(request,
                 error_code::auth_token_missing);
             co_return;
         }
         const auto target = route_user_id(request, parameter);
         if ((!target || *target != current->id) && !permits(*current, permission))
         {
-            cnetnexus::framework::web::respond_error(request,
+            cnetboot::framework::web::respond_error(request,
                 error_code::auth_forbidden);
             co_return;
         }
@@ -121,4 +121,4 @@ auto require_self_or_permission(std::string parameter, std::string permission,
     };
 }
 
-} // namespace cnetnexus::security
+} // namespace cnetboot::security

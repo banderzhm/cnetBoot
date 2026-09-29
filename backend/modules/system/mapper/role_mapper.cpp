@@ -1,10 +1,10 @@
-module cnetnexus.system.mapper.role;
+module cnetboot.system.mapper.role;
 
 import std;
 import cnetmod.coro.task;
 import cnetmod.orm;
 
-namespace cnetnexus::system {
+namespace cnetboot::system {
 namespace {
 
 constexpr std::string_view find_by_user_id_statement =
@@ -47,4 +47,4 @@ auto role_mapper::find_by_user_id(std::int64_t user_id)
     co_return std::move(result.data);
 }
 
-} // namespace cnetnexus::system
+} // namespace cnetboot::system

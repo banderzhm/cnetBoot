@@ -17,19 +17,19 @@ module;
 // 等名字已可见）。
 #include <cnetmod/orm.hpp>
 
-export module cnetnexus.chat.domain.chat_record;
+export module cnetboot.chat.domain.chat_record;
 
 import std;
 import cnetmod.orm;
 
-export namespace cnetnexus::chat {
+export namespace cnetboot::chat {
 
 /// @brief chat_session 全列模型。
 struct chat_session_record {
   std::uint64_t id{};
   std::uint64_t owner_id{};
   std::string title;
-  std::string algorithm;
+  std::string category;
   std::optional<std::string> system_prompt;
   std::string model;
   std::string temperature;
@@ -55,14 +55,14 @@ struct chat_message_record {
   std::optional<cnetmod::orm::calendar_datetime> deleted_at;
 };
 
-} // namespace cnetnexus::chat
+} // namespace cnetboot::chat
 
 CNETMOD_MODEL(
-    cnetnexus::chat::chat_session_record, "chat_session",
+    cnetboot::chat::chat_session_record, "chat_session",
     CNETMOD_FIELD(id, "id", bigint, PK | AUTO_INC),
     CNETMOD_FIELD(owner_id, "owner_id", bigint, DATA_OWNER),
     CNETMOD_FIELD(title, "title", varchar),
-    CNETMOD_FIELD(algorithm, "algorithm", varchar),
+    CNETMOD_FIELD(category, "category", varchar),
     CNETMOD_FIELD(system_prompt, "system_prompt", text, NULLABLE),
     CNETMOD_FIELD(model, "model", varchar),
     CNETMOD_FIELD(temperature, "temperature", decimal),
@@ -74,7 +74,7 @@ CNETMOD_MODEL(
     CNETMOD_FIELD(updated_at, "updated_at", datetime, FILL_INSERT_UPDATE),
     CNETMOD_FIELD(deleted_at, "deleted_at", datetime, NULLABLE | LOGIC_DELETE))
 
-CNETMOD_MODEL(cnetnexus::chat::chat_message_record, "chat_message",
+CNETMOD_MODEL(cnetboot::chat::chat_message_record, "chat_message",
               CNETMOD_FIELD(id, "id", bigint, PK | AUTO_INC),
               CNETMOD_FIELD(session_id, "session_id", bigint),
               CNETMOD_FIELD(role, "role", varchar),

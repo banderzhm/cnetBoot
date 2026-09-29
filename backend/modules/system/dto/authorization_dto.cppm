@@ -1,9 +1,9 @@
-export module cnetnexus.system.dto.authorization;
+export module cnetboot.system.dto.authorization;
 
 import std;
 import cnetmod.json;
 
-export namespace cnetnexus::system {
+export namespace cnetboot::system {
 
 /**
  * @brief Role representation exposed to authenticated clients.
@@ -50,4 +50,4 @@ struct authorization_dto
 [[nodiscard]] auto to_document(const authorization_dto& value)
     -> cnetmod::json::document;
 
-} // namespace cnetnexus::system
+} // namespace cnetboot::system

@@ -2,12 +2,12 @@ module;
 
 #include <cnetmod/orm.hpp>
 
-export module cnetnexus.system.domain.sys_role;
+export module cnetboot.system.domain.sys_role;
 
 import std;
 import cnetmod.orm;
 
-export namespace cnetnexus::system {
+export namespace cnetboot::system {
 
 enum class role_data_scope : int
 {
@@ -33,9 +33,9 @@ struct sys_role
     std::int64_t version{};
 };
 
-} // namespace cnetnexus::system
+} // namespace cnetboot::system
 
-CNETMOD_MODEL(cnetnexus::system::sys_role, "sys_role",
+CNETMOD_MODEL(cnetboot::system::sys_role, "sys_role",
     CNETMOD_FIELD(role_id, "role_id", bigint, PK | AUTO_INC),
     CNETMOD_FIELD(role_name, "role_name", varchar),
     CNETMOD_FIELD(role_key, "role_key", varchar),

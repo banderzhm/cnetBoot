@@ -1,21 +1,19 @@
 /**
- * @brief Registered error codes shared by every CNet Nexus module.
+ * @brief Registered error codes shared by every cnetBoot module.
  */
-export module cnetnexus.framework.error;
+export module cnetboot.framework.error;
 
 import std;
 
-export namespace cnetnexus::framework::error {
+export namespace cnetboot::framework::error {
 
 /** @brief Registered error code; every value owns exactly one registry entry. */
 enum class error_code : std::uint16_t
 {
     ok = 0,                     ///< SYSTEM.OK
     request_invalid_argument,   ///< REQUEST.INVALID_ARGUMENT
-    algorithm_not_supported,    ///< ALGORITHM.NOT_SUPPORTED
-    algorithm_failed,           ///< ALGORITHM.FAILED
-    bazi_chart_unavailable,     ///< BAZI.CHART_UNAVAILABLE
-    archive_not_found,          ///< ARCHIVE.NOT_FOUND
+    category_invalid,           ///< CHAT.CATEGORY_INVALID
+    ai_request_failed,          ///< AI.REQUEST_FAILED
     upstream_unavailable,       ///< DEPENDENCY.UNAVAILABLE
     auth_invalid_credentials,   ///< AUTH.INVALID_CREDENTIALS
     auth_token_missing,         ///< AUTH.TOKEN_MISSING
@@ -31,9 +29,6 @@ enum class error_code : std::uint16_t
     permission_not_found,       ///< PERMISSION.NOT_FOUND
     setting_not_found,          ///< SETTING.NOT_FOUND
     request_method_not_allowed, ///< REQUEST.METHOD_NOT_ALLOWED
-    case_not_found,             ///< CASE.NOT_FOUND
-    tag_not_found,              ///< TAG.NOT_FOUND
-    tag_conflict,               ///< TAG.CONFLICT
     chat_session_not_found,     ///< CHAT.SESSION_NOT_FOUND
     department_not_found,       ///< DEPARTMENT.NOT_FOUND
     department_conflict,        ///< DEPARTMENT.CONFLICT
@@ -50,7 +45,7 @@ struct error_entry
     int http_status;                  ///< default HTTP status
     std::string_view default_message; ///< safe default message
     std::string_view owner;           ///< owning module
-    std::string_view category;        ///< request / algorithm / dependency / system
+    std::string_view category;        ///< request / authentication / dependency / system
     bool retryable;                   ///< caller may retry
     bool exposable;                   ///< default_message may be shown verbatim
     bool deprecated;                  ///< no longer issued
@@ -69,4 +64,4 @@ struct error_entry
  *  HTTP status membership and mandatory fields. */
 [[nodiscard]] auto validate() noexcept -> std::expected<void, std::error_code>;
 
-} // namespace cnetnexus::framework::error
+} // namespace cnetboot::framework::error

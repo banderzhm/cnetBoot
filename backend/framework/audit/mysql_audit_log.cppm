@@ -1,14 +1,14 @@
 /** @brief MySQL-backed append-only audit sink. */
-export module cnetnexus.framework.audit.mysql;
+export module cnetboot.framework.audit.mysql;
 
 import std;
 import cnetmod.application;
 import cnetmod.coro.task;
-import cnetnexus.framework.audit;
-import cnetnexus.framework.audit.record;
-import cnetnexus.framework.error;
+import cnetboot.framework.audit;
+import cnetboot.framework.audit.record;
+import cnetboot.framework.error;
 
-export namespace cnetnexus::framework {
+export namespace cnetboot::framework {
 
 class mysql_audit_log_service final : public audit_log_service {
 public:
@@ -25,4 +25,4 @@ private:
   cnetmod::application::managed_repository<audit_log_record> audit_;
 };
 
-} // namespace cnetnexus::framework
+} // namespace cnetboot::framework

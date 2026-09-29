@@ -1,11 +1,11 @@
 /**
- * @brief 组合根入口：用 cnetmod application_builder 装配 Nexus 的各个应用模块。
+ * @brief 组合根入口：用 cnetmod application_builder 装配 cnetBoot 应用模块。
  */
-export module cnetnexus.bootstrap.application;
+export module cnetboot.bootstrap.application;
 
 import std;
 
-export namespace cnetnexus::bootstrap {
+export namespace cnetboot::bootstrap {
 
 /**
  * @brief Builds and runs the cnetmod administration application.
@@ -13,4 +13,4 @@ export namespace cnetnexus::bootstrap {
  */
 [[nodiscard]] auto run(std::string configuration_file) -> int;
 
-} // namespace cnetnexus::bootstrap
+} // namespace cnetboot::bootstrap

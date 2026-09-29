@@ -1,22 +1,22 @@
-export module cnetnexus.framework.web.sse_stream;
+export module cnetboot.framework.web.sse_stream;
 
 import std;
 import cnetmod.coro.task;
 import cnetmod.protocol.http;
-import cnetnexus.framework.error;
-import cnetnexus.framework.web.query;
+import cnetboot.framework.error;
+import cnetboot.framework.web.query;
 
-export namespace cnetnexus::framework::web {
+export namespace cnetboot::framework::web {
 
-/** @brief delta 事件的 data 载荷：{"text":"增量"}（字段名属于已冻结契约，chat 与断语共用）。 */
+/** @brief delta 事件的 data 载荷：{"text":"增量"}。 */
 [[nodiscard]] auto sse_delta_payload(std::string_view text) -> std::string;
 
 /** @brief error 事件的 data 载荷：与 HTTP 失败响应同一套统一错误体
  * {code,status,message,retryable}。
  */
-[[nodiscard]] auto sse_error_payload(cnetnexus::framework::error::error_code code) -> std::string;
+[[nodiscard]] auto sse_error_payload(cnetboot::framework::error::error_code code) -> std::string;
 
-/** @brief SSE 事件流写出器：chat 与断语（reading）共用同一套具名事件契约，避免两份拷贝。
+/** @brief SSE 事件流写出器：承载通用 AI 流式响应的具名事件契约。
  *
  *  **分工：线上帧字节全部由 cnetmod 框架产出，本类只承载业务契约。**
  *  - 帧编码（`event:` / `data:` 行与空行分隔符）：request_context::sse_send →
@@ -30,7 +30,7 @@ export namespace cnetnexus::framework::web {
  *  本类保留的业务语义（前端已按此实现，不得改动）：
  *  - 具名事件 delta / done / error，data 是 JSON 载荷（delta 与 error 见上面的共用函数；
  *    done 的载荷由各调用方按自己的契约构造，chat 是 messageId/content/tokens*，
- *    断语是 algorithm/content/tokens*）；
+ *    不同业务可以定义自己的 done DTO）；
  *  - finish() 写框架的无名终止帧收尾；连接按响应头的 keep-alive 保持（不发心跳帧，与现状一致）；
  *  - 惰性开始：首帧写入延迟到第一次写出时才发生（sse_send 内部会先写 200 + SSE 响应头），
  *    调用方据此可以在「首帧之前失败」时退回去写普通 HTTP 错误响应；
@@ -40,9 +40,7 @@ export namespace cnetnexus::framework::web {
  *  判据是「已尝试写出 SSE 响应头/帧」（框架在写响应头之前就把状态置为 committing，
  *  写失败停在 failed，两者都算 started），比「已成功写出」更保守。
  *  与旧本地镜像唯一的差异路径是 begin() 写响应头失败：旧实现把 started_ 留成 false，
- *  框架停在 failed（sse_started() == true）。本仓唯一的 started() 调用点是
- *  reading_responder（首帧之前失败才回落普通 JSON），它从不调用 begin()，该差异不可观察；
- *  chat 虽然调用 begin()，但只看返回值、不看 started()。
+ *  框架停在 failed（sse_started() == true）。调用方应据此避免在已提交后改写普通响应。
  */
 class sse_writer
 {
@@ -54,8 +52,7 @@ public:
     [[nodiscard]] auto started() const noexcept -> bool;
 
     /** @brief 显式开始事件流（200 + SSE 响应头）。
-     *  chat 在调用模型前先开始（此后失败一律走 error 帧）；断语按需惰性开始，
-     *  以便首帧之前失败仍返回普通 HTTP 错误。
+     *  开始后失败必须写 error 帧；尚未开始时仍可返回普通 HTTP 错误。
      */
     auto begin() -> cnetmod::task<bool>;
 
@@ -66,7 +63,7 @@ public:
     auto done(std::string_view payload) -> cnetmod::task<bool>;
 
     /** @brief 写出一帧 event: error（统一错误体）。 */
-    auto error(cnetnexus::framework::error::error_code code) -> cnetmod::task<bool>;
+    auto error(cnetboot::framework::error::error_code code) -> cnetmod::task<bool>;
 
     /** @brief 写出无语义终止帧 data: {"done":true}，结束本次事件流。 */
     auto finish() -> cnetmod::task<bool>;
@@ -88,6 +85,6 @@ private:
  *  缺省 / 空 / false / 0 表示一次性响应；true / 1 表示 SSE。其余取值按
  *  REQUEST.INVALID_ARGUMENT 处理（严格，不静默当成 false）。
  */
-[[nodiscard]] auto sse_requested(std::string_view query) -> std::expected<bool, cnetnexus::framework::error::error_code>;
+[[nodiscard]] auto sse_requested(std::string_view query) -> std::expected<bool, cnetboot::framework::error::error_code>;
 
-} // namespace cnetnexus::framework::web
+} // namespace cnetboot::framework::web

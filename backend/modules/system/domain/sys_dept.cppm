@@ -2,12 +2,12 @@ module;
 
 #include <cnetmod/orm.hpp>
 
-export module cnetnexus.system.domain.sys_dept;
+export module cnetboot.system.domain.sys_dept;
 
 import std;
 import cnetmod.orm;
 
-export namespace cnetnexus::system {
+export namespace cnetboot::system {
 
 /**
  * @brief Department node used by organization and row-level data scopes.
@@ -25,9 +25,9 @@ struct sys_dept
     int deleted{};
 };
 
-} // namespace cnetnexus::system
+} // namespace cnetboot::system
 
-CNETMOD_MODEL(cnetnexus::system::sys_dept, "sys_dept",
+CNETMOD_MODEL(cnetboot::system::sys_dept, "sys_dept",
     CNETMOD_FIELD(dept_id, "dept_id", bigint, PK | AUTO_INC),
     CNETMOD_FIELD(parent_id, "parent_id", bigint),
     CNETMOD_FIELD(dept_name, "dept_name", varchar),

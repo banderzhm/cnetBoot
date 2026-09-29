@@ -1,8 +1,8 @@
-export module cnetnexus.framework.pagination;
+export module cnetboot.framework.pagination;
 
 import std;
 
-export namespace cnetnexus::framework::pagination {
+export namespace cnetboot::framework::pagination {
 
 inline constexpr int default_page_size = 20;
 inline constexpr int max_page_size = 100;
@@ -34,4 +34,4 @@ template <typename T> struct page_result
     return normalized;
 }
 
-} // namespace cnetnexus::framework::pagination
+} // namespace cnetboot::framework::pagination

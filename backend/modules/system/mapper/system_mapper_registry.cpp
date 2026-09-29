@@ -1,10 +1,10 @@
-module cnetnexus.system.mapper.registry;
+module cnetboot.system.mapper.registry;
 
 import std;
 import cnetmod.application.async_file_template;
 import cnetmod.coro.task;
 
-namespace cnetnexus::system {
+namespace cnetboot::system {
 
 system_mapper_registry::system_mapper_registry(
     std::filesystem::path mapper_directory)
@@ -113,4 +113,4 @@ auto system_mapper_registry::snapshot() const noexcept
     return registry_;
 }
 
-} // namespace cnetnexus::system
+} // namespace cnetboot::system

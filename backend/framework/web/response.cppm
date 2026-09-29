@@ -4,13 +4,13 @@
  * 全仓只有两种响应形态：成功时是业务文档本身，失败时是 error_response 的
  * {code,status,message,retryable}。不再有 {code,message,data} 之类的包装层。
  */
-export module cnetnexus.framework.web.response;
+export module cnetboot.framework.web.response;
 
 import std;
 import cnetmod.json;
 import cnetmod.protocol.http;
 
-export namespace cnetnexus::framework::web {
+export namespace cnetboot::framework::web {
 
 /**
  * @brief 下发一份 JSON 文档；序列化失败时改发 SYSTEM.INTERNAL_ERROR。
@@ -38,4 +38,4 @@ void respond_json(cnetmod::http::request_context& context, const T& body,
     context.json(status, *encoded);
 }
 
-} // namespace cnetnexus::framework::web
+} // namespace cnetboot::framework::web

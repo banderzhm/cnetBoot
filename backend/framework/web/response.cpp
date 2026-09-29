@@ -1,13 +1,13 @@
-module cnetnexus.framework.web.response;
+module cnetboot.framework.web.response;
 
 import std;
 import cnetmod.core.log;
 import cnetmod.json;
 import cnetmod.protocol.http;
-import cnetnexus.framework.error;
-import cnetnexus.framework.web.error_response;
+import cnetboot.framework.error;
+import cnetboot.framework.web.error_response;
 
-namespace cnetnexus::framework::web {
+namespace cnetboot::framework::web {
 
 void respond_serialization_failure(cnetmod::http::request_context& context,
     std::string_view reason)
@@ -15,7 +15,7 @@ void respond_serialization_failure(cnetmod::http::request_context& context,
     logger::error{"response serialization failed: path={} error={}",
         context.path(), reason};
     respond_error(context,
-        cnetnexus::framework::error::error_code::system_internal_error);
+        cnetboot::framework::error::error_code::system_internal_error);
 }
 
 void respond_document(cnetmod::http::request_context& context,
@@ -30,4 +30,4 @@ void respond_document(cnetmod::http::request_context& context,
     context.json(status, *encoded);
 }
 
-} // namespace cnetnexus::framework::web
+} // namespace cnetboot::framework::web

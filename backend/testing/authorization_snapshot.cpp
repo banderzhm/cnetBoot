@@ -1,13 +1,13 @@
 import std;
 import cnetmod.json;
 import cnetmod.orm;
-import cnetnexus.system.dto.authorization;
-import cnetnexus.system.domain.sys_role;
-import cnetnexus.system.domain.sys_user;
+import cnetboot.system.dto.authorization;
+import cnetboot.system.domain.sys_role;
+import cnetboot.system.domain.sys_user;
 
 auto main() -> int
 {
-    cnetnexus::system::authorization_dto original{
+    cnetboot::system::authorization_dto original{
         .user_id = 42,
         .roles = {{.id = 3, .name = "Editor", .key = "editor"}},
         .permissions = {"system:user:list"},
@@ -19,7 +19,7 @@ auto main() -> int
     if (!encoded)
         return 1;
     const auto decoded =
-        cnetmod::json::parse<cnetnexus::system::authorization_dto>(*encoded);
+        cnetmod::json::parse<cnetboot::system::authorization_dto>(*encoded);
     if (!decoded || decoded->user_id != 42 || decoded->roles.size() != 1 ||
         decoded->roles.front().key != "editor" ||
         decoded->permissions != original.permissions ||
@@ -28,12 +28,12 @@ auto main() -> int
         decoded->menus.front().children.front().name != "Users")
         return 2;
 
-    const cnetnexus::system::sys_role new_role{};
+    const cnetboot::system::sys_role new_role{};
     if (new_role.data_scope !=
-        static_cast<int>(cnetnexus::system::role_data_scope::self))
+        static_cast<int>(cnetboot::system::role_data_scope::self))
         return 3;
 
-    cnetmod::orm::data_permission_interceptor<cnetnexus::system::sys_user>
+    cnetmod::orm::data_permission_interceptor<cnetboot::system::sys_user>
         filter{cnetmod::orm::data_permission_scope{
             .include_owner = true,
             .owner_id = 42,

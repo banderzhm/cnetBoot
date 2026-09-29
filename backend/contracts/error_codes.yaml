@@ -18,35 +18,19 @@ errors:
     retryable: false
     exposable: true
     deprecated: false
-  - code: ALGORITHM.NOT_SUPPORTED
-    httpStatus: 404
-    defaultMessage: 请求的算法不在支持清单内
-    owner: platform
-    category: algorithm
-    retryable: false
-    exposable: true
-    deprecated: false
-  - code: ALGORITHM.FAILED
-    httpStatus: 422
-    defaultMessage: 算法无法处理当前输入
-    owner: platform
-    category: algorithm
-    retryable: false
-    exposable: true
-    deprecated: false
-  - code: BAZI.CHART_UNAVAILABLE
-    httpStatus: 503
-    defaultMessage: 命盘暂不可用，请稍后重试
-    owner: bazi
-    category: dependency
-    retryable: true
-    exposable: true
-    deprecated: false
-  - code: ARCHIVE.NOT_FOUND
-    httpStatus: 404
-    defaultMessage: 快照不存在或已过期
-    owner: platform
+  - code: CHAT.CATEGORY_INVALID
+    httpStatus: 400
+    defaultMessage: 会话分类不合法
+    owner: chat
     category: request
+    retryable: false
+    exposable: true
+    deprecated: false
+  - code: AI.REQUEST_FAILED
+    httpStatus: 422
+    defaultMessage: AI 无法处理当前请求
+    owner: ai
+    category: dependency
     retryable: false
     exposable: true
     deprecated: false
@@ -165,30 +149,6 @@ errors:
   - code: REQUEST.METHOD_NOT_ALLOWED
     httpStatus: 405
     defaultMessage: 该资源不支持此请求方法
-    owner: platform
-    category: request
-    retryable: false
-    exposable: true
-    deprecated: false
-  - code: CASE.NOT_FOUND
-    httpStatus: 404
-    defaultMessage: 案例不存在
-    owner: platform
-    category: request
-    retryable: false
-    exposable: true
-    deprecated: false
-  - code: TAG.NOT_FOUND
-    httpStatus: 404
-    defaultMessage: 标签不存在
-    owner: platform
-    category: request
-    retryable: false
-    exposable: true
-    deprecated: false
-  - code: TAG.CONFLICT
-    httpStatus: 409
-    defaultMessage: 标签名已存在
     owner: platform
     category: request
     retryable: false

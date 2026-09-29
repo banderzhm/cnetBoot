@@ -1,12 +1,12 @@
-export module cnetnexus.system.mapper.role;
+export module cnetboot.system.mapper.role;
 
 import std;
 import cnetmod.application;
 import cnetmod.coro.task;
-import cnetnexus.system.domain.sys_role;
-import cnetnexus.system.mapper.registry;
+import cnetboot.system.domain.sys_role;
+import cnetboot.system.mapper.registry;
 
-export namespace cnetnexus::system {
+export namespace cnetboot::system {
 
 /**
  * @brief Strongly typed role queries backed by the system XML registry.
@@ -25,4 +25,4 @@ private:
     std::shared_ptr<system_mapper_registry> registry_;
 };
 
-} // namespace cnetnexus::system
+} // namespace cnetboot::system

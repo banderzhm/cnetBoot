@@ -1,8 +1,8 @@
-export module cnetnexus.framework.security.current_user;
+export module cnetboot.framework.security.current_user;
 
 import std;
 
-export namespace cnetnexus::security {
+export namespace cnetboot::security {
 
 /**
  * @brief Immutable authenticated identity propagated through one request.
@@ -16,4 +16,4 @@ struct current_user
     std::vector<std::string> permissions;
 };
 
-} // namespace cnetnexus::security
+} // namespace cnetboot::security

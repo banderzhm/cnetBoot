@@ -1,13 +1,13 @@
-module cnetnexus.framework.web.rate_limit;
+module cnetboot.framework.web.rate_limit;
 
 import std;
 import cnetmod.coro.task;
 import cnetmod.protocol.http;
 import cnetmod.protocol.http.middleware.rate_limiter;
-import cnetnexus.framework.error;
-import cnetnexus.framework.web.error_response;
+import cnetboot.framework.error;
+import cnetboot.framework.web.error_response;
 
-namespace cnetnexus::framework::web {
+namespace cnetboot::framework::web {
 namespace {
 
     [[nodiscard]] auto validate_rule(const rate_limit_rule& rule, std::string_view name)
@@ -29,7 +29,7 @@ namespace {
             .on_limited = [](cnetmod::http::request_context& request, std::chrono::seconds)
             {
                 respond_error(request,
-                    cnetnexus::framework::error::error_code::request_rate_limited);
+                    cnetboot::framework::error::error_code::request_rate_limited);
             },
         });
     }
@@ -38,8 +38,7 @@ namespace {
     struct policy_limiters
     {
         cnetmod::http::middleware_fn login;
-        cnetmod::http::middleware_fn reading;
-        cnetmod::http::middleware_fn archive_write;
+        cnetmod::http::middleware_fn ai;
 
         [[nodiscard]] auto select(rate_limit_policy policy) const
             -> const cnetmod::http::middleware_fn&
@@ -48,10 +47,8 @@ namespace {
             {
             case rate_limit_policy::login:
                 return login;
-            case rate_limit_policy::reading:
-                return reading;
-            case rate_limit_policy::archive_write:
-                return archive_write;
+            case rate_limit_policy::ai:
+                return ai;
             }
             throw std::logic_error{"unknown rate limit policy"};
         }
@@ -67,9 +64,7 @@ auto validate_edge_options(const edge_options& options)
             return std::unexpected{std::string{"trusted_proxies 不能包含空项"}};
     if (auto valid = validate_rule(options.rate_limits.login, "login"); !valid)
         return valid;
-    if (auto valid = validate_rule(options.rate_limits.reading, "reading"); !valid)
-        return valid;
-    return validate_rule(options.rate_limits.archive_write, "archive_write");
+    return validate_rule(options.rate_limits.ai, "ai");
 }
 
 auto with_rate_limit(cnetmod::http::endpoint_metadata metadata,
@@ -89,9 +84,7 @@ auto rate_limit_middleware(const edge_options& options) -> cnetmod::http::middle
 {
     auto limiters = std::make_shared<const policy_limiters>(policy_limiters{
         .login = make_limiter(options.rate_limits.login, options.trusted_proxies),
-        .reading = make_limiter(options.rate_limits.reading, options.trusted_proxies),
-        .archive_write =
-            make_limiter(options.rate_limits.archive_write, options.trusted_proxies),
+        .ai = make_limiter(options.rate_limits.ai, options.trusted_proxies),
     });
     return [limiters](cnetmod::http::request_context& request,
                cnetmod::http::next_fn next) -> cnetmod::task<void>
@@ -106,4 +99,4 @@ auto rate_limit_middleware(const edge_options& options) -> cnetmod::http::middle
     };
 }
 
-} // namespace cnetnexus::framework::web
+} // namespace cnetboot::framework::web

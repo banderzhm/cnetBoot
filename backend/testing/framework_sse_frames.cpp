@@ -6,28 +6,28 @@ import cnetmod.executor;
 import cnetmod.coro;
 import cnetmod.io;
 import cnetmod.protocol.http;
-import cnetnexus.framework.error;
-import cnetnexus.framework.web.error_response;
-import cnetnexus.framework.web.sse_stream;
+import cnetboot.framework.error;
+import cnetboot.framework.web.error_response;
+import cnetboot.framework.web.sse_stream;
 
 // SSE 线字节契约用例（framework_sse_frames）：线上帧字节是已冻结的前端契约，
 // 任何一格变化都必须显式改这个用例。
 //
-// 迁移自 xuanxue-algorithm tests/sse_frames_test.cpp。**替代实现说明**：原用例经
-// reading_responder / chat_routes 驱动，那些 transport 尚未迁入 CNetNexus（task-3），
-// 因此这里改为直接驱动本仓已迁移的 cnetnexus.framework.web.sse_stream::sse_writer，
+// 迁移自 legacy application tests/sse_frames_test.cpp。**替代实现说明**：原用例经
+// streaming responder / chat_routes 驱动，那些 transport 尚未迁入 cnetBoot（task-3），
+// 因此这里改为直接驱动本仓已迁移的 cnetboot.framework.web.sse_stream::sse_writer，
 // 走真实 loopback TCP 抓线上字节。断言逐条等价：框架编码器冻结样本、SSE 响应头、
 // delta/done/error 帧字节、started() 惰性开始判据、无名终止帧。
 //
 // 与玄学用例的覆盖差异（明确记录，不是静默放宽）：
-//  - 原第 3 段「断语缓存命中只出一帧 done」的 reading 载荷形状由 task-3 的读取路由
-//    用例覆盖（载荷构造在 reading_responder 里，目前不存在）；
-//  - 原第 4 段「首帧之前失败回退普通 JSON」同理依赖 reading_responder；这里改为
+//  - 原第 3 段「断语缓存命中只出一帧 done」的 AI 载荷形状由 task-3 的读取路由
+//    用例覆盖（载荷构造在 streaming responder 里，目前不存在）；
+//  - 原第 4 段「首帧之前失败回退普通 JSON」同理依赖 streaming responder；这里改为
 //    直接断言 sse_writer 一帧未写时 started() == false（回退判据本身）。
 
 namespace {
 
-using error_code = cnetnexus::framework::error::error_code;
+using error_code = cnetboot::framework::error::error_code;
 
 /// @brief 冻结的 SSE 响应头样本（\r\n 行尾）；字段与顺序来自框架 http::sse::prepare。
 constexpr std::string_view k_sse_head = "HTTP/1.1 200 OK\r\n" "Cache-Control: no-cache, no-transform\r\n" "Connection: keep-alive\r\n" "Content-Type: text/event-stream; charset=utf-8\r\n" "Transfer-Encoding: chunked\r\n" "X-Accel-Buffering: no\r\n" "X-Streamed: 1\r\n" "\r\n";
@@ -41,12 +41,12 @@ constexpr std::string_view k_chat_frames =
 
 /// @brief 断语形状的中途失败流：delta → error（统一错误体）→ 终止帧。
 constexpr std::string_view k_error_frames =
-    "event: delta\ndata: {\"text\":\"事业\"}\n\n" "event: error\ndata: " "{\"code\":\"422\",\"status\":\"ALGORITHM.FAILED\",\"message\":\"算法无法处理当前输入\",\"retryable\":false}\n\n" "data: {\"done\":true}\n\n";
+    "event: delta\ndata: {\"text\":\"事业\"}\n\n" "event: error\ndata: " "{\"code\":\"422\",\"status\":\"AI.REQUEST_FAILED\",\"message\":\"AI 无法处理当前请求\",\"retryable\":false}\n\n" "data: {\"done\":true}\n\n";
 
 /// @brief 框架编码器与载荷函数的冻结样本。
 constexpr std::string_view k_delta_frame = "event: delta\ndata: {\"text\":\"增量\"}\n\n";
 constexpr std::string_view k_error_payload =
-    R"({"code":"422","status":"ALGORITHM.FAILED","message":"算法无法处理当前输入","retryable":false})";
+    R"({"code":"422","status":"AI.REQUEST_FAILED","message":"AI 无法处理当前请求","retryable":false})";
 constexpr std::string_view k_unavailable_body =
     R"({"code":"503","status":"DEPENDENCY.UNAVAILABLE","message":"上游依赖暂不可用，请稍后重试","retryable":true})";
 
@@ -156,7 +156,7 @@ auto call_handler(cnetmod::io_context& io, cnetmod::socket& listener, std::uint1
     if (!result.streamed)
         co_return result;
 
-    result.stage = "reading";
+    result.stage = "ai";
     std::array<std::byte, 8192> buffer{};
     while (!result.frames.ends_with("0\r\n\r\n"))
     {
@@ -233,25 +233,25 @@ auto main() -> int
     const auto heartbeat_frame = cnetmod::http::sse::heartbeat();
     checks.that(heartbeat_frame == ": keepalive\n\n", "框架 sse::heartbeat 是注释帧（request_context 无出口）",
         heartbeat_frame, ": keepalive\n\n");
-    const auto delta_payload = cnetnexus::framework::web::sse_delta_payload("增量");
+    const auto delta_payload = cnetboot::framework::web::sse_delta_payload("增量");
     checks.that(delta_payload == R"({"text":"增量"})", "sse_delta_payload 只出纯 JSON 载荷（编码留给框架）",
         delta_payload, R"({"text":"增量"})");
-    const auto error_payload = cnetnexus::framework::web::sse_error_payload(error_code::algorithm_failed);
+    const auto error_payload = cnetboot::framework::web::sse_error_payload(error_code::ai_request_failed);
     checks.that(error_payload == k_error_payload, "sse_error_payload 只出统一错误体载荷（编码留给框架）",
         error_payload, k_error_payload);
 
     // ?stream= 开关口径（原来属于 transport，现在归 framework.web）。
-    checks.that(cnetnexus::framework::web::sse_requested("") == std::expected<bool, error_code>{false},
+    checks.that(cnetboot::framework::web::sse_requested("") == std::expected<bool, error_code>{false},
         "sse_requested：缺省 = 非流式");
-    checks.that(cnetnexus::framework::web::sse_requested("stream=true") == std::expected<bool, error_code>{true},
+    checks.that(cnetboot::framework::web::sse_requested("stream=true") == std::expected<bool, error_code>{true},
         "sse_requested：stream=true = 流式");
-    checks.that(cnetnexus::framework::web::sse_requested("stream=1") == std::expected<bool, error_code>{true},
+    checks.that(cnetboot::framework::web::sse_requested("stream=1") == std::expected<bool, error_code>{true},
         "sse_requested：stream=1 = 流式");
-    checks.that(!cnetnexus::framework::web::sse_requested("stream=maybe").has_value(),
+    checks.that(!cnetboot::framework::web::sse_requested("stream=maybe").has_value(),
         "sse_requested：非法取值 400（不静默当 false）");
-    checks.that(cnetnexus::framework::web::error_body_json(error_code::upstream_unavailable) == k_unavailable_body,
+    checks.that(cnetboot::framework::web::error_body_json(error_code::upstream_unavailable) == k_unavailable_body,
         "统一错误体 JSON 逐字节一致",
-        cnetnexus::framework::web::error_body_json(error_code::upstream_unavailable), k_unavailable_body);
+        cnetboot::framework::web::error_body_json(error_code::upstream_unavailable), k_unavailable_body);
 
     auto io = cnetmod::make_io_context();
     if (!io)
@@ -279,7 +279,7 @@ auto main() -> int
                 co_await context.with_sse([&](cnetmod::http::request_context&,
                     cnetmod::http::sse_stream& stream) -> cnetmod::task<void>
                 {
-                    cnetnexus::framework::web::sse_writer writer{stream};
+                    cnetboot::framework::web::sse_writer writer{stream};
                     started_before = writer.started();
                     if (!co_await writer.begin())
                         co_return;
@@ -310,9 +310,9 @@ auto main() -> int
                 co_await context.with_sse([](cnetmod::http::request_context&,
                     cnetmod::http::sse_stream& stream) -> cnetmod::task<void>
                 {
-                    cnetnexus::framework::web::sse_writer writer{stream};
+                    cnetboot::framework::web::sse_writer writer{stream};
                     (void)co_await writer.delta("事业");
-                    (void)co_await writer.error(error_code::algorithm_failed);
+                    (void)co_await writer.error(error_code::ai_request_failed);
                     (void)co_await writer.finish();
                 });
             };

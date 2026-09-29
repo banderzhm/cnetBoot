@@ -8,17 +8,17 @@
  * 与 /api/v1/capabilities 一样属于已发布契约，免令牌：在注册处用 endpoint 元数据
  * anonymous() 声明，认证/授权中间件据此放行，不另维护白名单。
  */
-export module cnetnexus.reading.controller.llm_routes;
+export module cnetboot.ai.controller.llm_routes;
 
 import std;
 import cnetmod.protocol.http;
-import cnetnexus.framework.web.route_handler;
-import cnetnexus.framework.config.llm_settings;
+import cnetboot.framework.web.route_handler;
+import cnetboot.framework.config.llm_settings;
 
-export namespace cnetnexus::reading {
+export namespace cnetboot::ai {
 
 /** @brief 声明 LLM 目录端点；directory 为不可变快照，与应用同寿命。 */
 void declare_llm_routes(cnetmod::http::router& routes,
-    std::shared_ptr<const cnetnexus::framework::config::llm_directory> directory);
+    std::shared_ptr<const cnetboot::framework::config::llm_directory> directory);
 
-} // namespace cnetnexus::reading
+} // namespace cnetboot::ai

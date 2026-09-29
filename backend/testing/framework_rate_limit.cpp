@@ -6,12 +6,12 @@ import cnetmod.coro.task;
 import cnetmod.core.socket;
 import cnetmod.io.io_context;
 import cnetmod.protocol.http;
-import cnetnexus.framework.web.rate_limit;
-import cnetnexus.framework.web.route_handler;
+import cnetboot.framework.web.rate_limit;
+import cnetboot.framework.web.route_handler;
 
 namespace {
 
-namespace web = cnetnexus::framework::web;
+namespace web = cnetboot::framework::web;
 
 struct outcome
 {
@@ -64,21 +64,21 @@ auto main() -> int
     };
 
     web::edge_options options;
-    options.rate_limits.reading = {.rate_per_second = 0.000001, .burst = 1.0};
+    options.rate_limits.ai = {.rate_per_second = 0.000001, .burst = 1.0};
     check(web::validate_edge_options(options).has_value(), "valid options pass");
     auto middleware = web::rate_limit_middleware(options);
 
-    const auto reading = web::with_rate_limit(web::optional_identity(),
-        web::rate_limit_policy::reading);
-    const auto first = invoke(middleware, reading);
-    const auto second = invoke(middleware, reading);
+    const auto ai = web::with_rate_limit(web::optional_identity(),
+        web::rate_limit_policy::ai);
+    const auto first = invoke(middleware, ai);
+    const auto second = invoke(middleware, ai);
     check(first.reached, "the first request within burst reaches the handler");
     check(!second.reached && second.status == 429 &&
             second.body.contains("REQUEST.RATE_LIMITED"),
         "the request over budget answers REQUEST.RATE_LIMITED");
 
     // 伪造的 X-Forwarded-For 不会换来新的令牌桶（未配置可信代理）。
-    const auto spoofed = invoke(middleware, reading);
+    const auto spoofed = invoke(middleware, ai);
     check(!spoofed.reached, "a spoofed forwarding header does not reset the budget");
 
     const auto login = invoke(middleware,

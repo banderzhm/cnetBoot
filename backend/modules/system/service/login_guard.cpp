@@ -1,17 +1,17 @@
-module cnetnexus.system.service.login_guard;
+module cnetboot.system.service.login_guard;
 
 import std;
 import cnetmod.core.log;
 import cnetmod.coro.task;
 import cnetmod.protocol.redis;
-import cnetnexus.framework.error;
+import cnetboot.framework.error;
 
-namespace cnetnexus::system {
+namespace cnetboot::system {
 namespace {
 
-    using error_code = cnetnexus::framework::error::error_code;
+    using error_code = cnetboot::framework::error::error_code;
 
-    constexpr std::string_view key_prefix{"cnetnexus:auth:"};
+    constexpr std::string_view key_prefix{"cnetboot:auth:"};
 
     /// @brief 账号名进入 Redis 键前做十六进制编码：键里不出现任何用户可控的分隔符。
     [[nodiscard]] auto encode(std::string_view value) -> std::string
@@ -124,4 +124,4 @@ auto login_guard::count(std::string key, std::uint32_t limit, std::string lock)
         logger::warn{"login guard could not write a lock: {}", locked.error().message()};
 }
 
-} // namespace cnetnexus::system
+} // namespace cnetboot::system

@@ -4,7 +4,7 @@
  * 只有这里认识 cnetmod 的 ai::chat_request / ai::chat_response；上层用例只看到
  * llm_request / llm_completion。
  */
-module cnetnexus.reading.service.model.composed_llm_service;
+module cnetboot.ai.service.model.composed_llm_service;
 
 import std;
 import cnetmod.ai;
@@ -12,16 +12,16 @@ import cnetmod.application.chat_model_composition;
 import cnetmod.application.components;
 import cnetmod.core.log;
 import cnetmod.coro.task;
-import cnetnexus.framework.config.llm_settings;
-import cnetnexus.framework.error;
-import cnetnexus.reading.domain.llm_contract;
-import cnetnexus.reading.service.llm_service;
+import cnetboot.framework.config.llm_settings;
+import cnetboot.framework.error;
+import cnetboot.ai.domain.llm_contract;
+import cnetboot.ai.service.llm_service;
 
-namespace cnetnexus::reading {
+namespace cnetboot::ai {
 namespace {
 
-    using framework_error = cnetnexus::framework::error::error_code;
-    namespace config = cnetnexus::framework::config;
+    using framework_error = cnetboot::framework::error::error_code;
+    namespace config = cnetboot::framework::config;
 
     /// @brief 把供应商无关的一条消息投影成 cnetmod 的消息（role 保持原样）。
     [[nodiscard]] auto to_ai_message(const llm_message& message) -> cnetmod::ai::message
@@ -71,7 +71,7 @@ namespace {
     {
         logger::warn{"llm invocation failed: provider={} model={} detail={}",
             target.provider, target.model, detail};
-        return framework_error::algorithm_failed;
+        return framework_error::ai_request_failed;
     }
 
     /**
@@ -204,4 +204,4 @@ auto make_llm_service(cnetmod::application::component_resolver& resolver,
         std::move(models));
 }
 
-} // namespace cnetnexus::reading
+} // namespace cnetboot::ai

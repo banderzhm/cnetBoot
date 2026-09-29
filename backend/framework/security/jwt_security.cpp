@@ -1,4 +1,4 @@
-module cnetnexus.framework.security.jwt_security;
+module cnetboot.framework.security.jwt_security;
 
 import std;
 import cnetmod.application;
@@ -11,14 +11,14 @@ import cnetmod.protocol.redis;
 import cnetmod.orm;
 import cnetmod.security.jwt;
 import cnetmod.utils.concurrent_containers.striped_hash_map;
-import cnetnexus.framework.error;
-import cnetnexus.framework.security.current_user;
-import cnetnexus.framework.web.error_response;
+import cnetboot.framework.error;
+import cnetboot.framework.security.current_user;
+import cnetboot.framework.web.error_response;
 
-namespace cnetnexus::security {
+namespace cnetboot::security {
 namespace {
 
-    using error_code = cnetnexus::framework::error::error_code;
+    using error_code = cnetboot::framework::error::error_code;
 
     /// 会话 ID：128 位随机数的十六进制表示。
     constexpr std::size_t session_id_bytes{16};
@@ -93,7 +93,7 @@ namespace {
     {
         request.scope().bind(std::make_shared<authentication_failure_code>(
             authentication_failure_code{.code = code}));
-        const auto entry = cnetnexus::framework::error::find(code);
+        const auto entry = cnetboot::framework::error::find(code);
         return cnetmod::jwt_auth_failure{
             .status = entry ? entry->http_status : cnetmod::http::status::unauthorized,
             .message = entry ? std::string{entry->name} : std::string{"AUTH.TOKEN_INVALID"},
@@ -259,7 +259,7 @@ namespace {
 
 auto jwt_session_key(std::string_view session_id) -> std::string
 {
-    return std::string{"cnetnexus:jwt:session:{sessions}:"} +
+    return std::string{"cnetboot:jwt:session:{sessions}:"} +
         std::string{session_id};
 }
 
@@ -366,7 +366,7 @@ auto jwt_security(jwt_security_options options) -> cnetmod::http::middleware_fn
                           const cnetmod::jwt_auth_failure& failure)
     {
         const auto* precise = request.scope().find<authentication_failure_code>();
-        cnetnexus::framework::web::respond_error(request,
+        cnetboot::framework::web::respond_error(request,
             precise != nullptr ? precise->code : code_for(failure.reason));
     };
 
@@ -378,4 +378,4 @@ auto jwt_security(jwt_security_options options) -> cnetmod::http::middleware_fn
     });
 }
 
-} // namespace cnetnexus::security
+} // namespace cnetboot::security

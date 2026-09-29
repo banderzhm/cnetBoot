@@ -1,10 +1,10 @@
-module cnetnexus.system.mapper.user;
+module cnetboot.system.mapper.user;
 
 import std;
 import cnetmod.coro.task;
 import cnetmod.orm;
 
-namespace cnetnexus::system {
+namespace cnetboot::system {
 namespace {
 
     constexpr std::string_view count_page_statement =
@@ -68,4 +68,4 @@ auto user_mapper::find_page(std::size_t page_number, std::size_t page_size,
             : static_cast<std::size_t>(count.data.front().total)};
 }
 
-} // namespace cnetnexus::system
+} // namespace cnetboot::system

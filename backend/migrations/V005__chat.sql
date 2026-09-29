@@ -1,4 +1,4 @@
--- V005 —— AI 多轮对话与会话消息、断语缓存，以及 chat:* 权限码。
+-- V005 —— 通用 AI 多轮对话、会话消息与 chat:* 权限码。
 --
 -- 口径：
 --   * 会话与消息都是逻辑删除（deleted_at），读取一律排除非空行；
@@ -14,7 +14,7 @@ CREATE TABLE IF NOT EXISTS chat_session (
     id              BIGINT NOT NULL AUTO_INCREMENT,
     owner_id        BIGINT NOT NULL DEFAULT 0,
     title           VARCHAR(128) NOT NULL DEFAULT '',
-    algorithm       VARCHAR(32) NOT NULL DEFAULT '',
+    category        VARCHAR(64) NOT NULL DEFAULT '',
     system_prompt   TEXT NULL,
     model           VARCHAR(64) NOT NULL DEFAULT '',
     temperature     DECIMAL(3,2) NOT NULL DEFAULT 0.70,
@@ -27,7 +27,7 @@ CREATE TABLE IF NOT EXISTS chat_session (
     deleted_at      DATETIME(6) NULL,
     PRIMARY KEY (id),
     KEY ix_chat_session_owner (owner_id, created_at),
-    KEY ix_chat_session_algorithm (algorithm),
+    KEY ix_chat_session_category (category),
     KEY ix_chat_session_updated (updated_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
@@ -44,28 +44,6 @@ CREATE TABLE IF NOT EXISTS chat_message (
     PRIMARY KEY (id),
     KEY ix_chat_message_session (session_id, id),
     KEY ix_chat_message_created (created_at)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-
-CREATE TABLE IF NOT EXISTS reading_cache (
-    id                BIGINT NOT NULL AUTO_INCREMENT,
-    user_id           BIGINT NOT NULL DEFAULT 0,
-    algorithm         VARCHAR(32) NOT NULL,
-    chart_fingerprint CHAR(64) NOT NULL,
-    question_hash     CHAR(64) NOT NULL,
-    question          TEXT NULL,
-    content           MEDIUMTEXT NOT NULL,
-    model             VARCHAR(64) NOT NULL DEFAULT '',
-    tokens_in         INT NOT NULL DEFAULT 0,
-    tokens_out        INT NOT NULL DEFAULT 0,
-    engine_version    VARCHAR(64) NOT NULL,
-    hit_count         INT UNSIGNED NOT NULL DEFAULT 0,
-    created_at        DATETIME(6) NOT NULL,
-    updated_at        DATETIME(6) NOT NULL,
-    last_hit_at       DATETIME(6) NULL,
-    PRIMARY KEY (id),
-    UNIQUE KEY uk_reading_cache_key (user_id, algorithm, chart_fingerprint, question_hash),
-    KEY ix_reading_cache_fingerprint (algorithm, chart_fingerprint),
-    KEY ix_reading_cache_updated (updated_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- chat:* 权限码。sys_menu 上没有 permission 唯一键，因此 ON DUPLICATE KEY
@@ -95,4 +73,4 @@ INSERT IGNORE INTO sys_role_menu (role_id, menu_id)
 SELECT r.role_id, m.menu_id
 FROM sys_role r
 JOIN sys_menu m ON m.permission LIKE 'chat:%'
-WHERE r.role_key IN ('admin', 'practitioner');
+WHERE r.role_key = 'admin';

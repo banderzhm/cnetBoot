@@ -1,13 +1,13 @@
-module cnetnexus.system.service.authorization_service;
+module cnetboot.system.service.authorization_service;
 
 import std;
 import cnetmod.coro.task;
 import cnetmod.orm;
-import cnetnexus.framework.error;
-import cnetnexus.system.domain.sys_menu;
-import cnetnexus.system.service.failure;
+import cnetboot.framework.error;
+import cnetboot.system.domain.sys_menu;
+import cnetboot.system.service.failure;
 
-namespace cnetnexus::system {
+namespace cnetboot::system {
 namespace {
 
     [[nodiscard]] auto build_menu_level(std::int64_t parent_id,
@@ -59,7 +59,7 @@ authorization_service::authorization_service(
 }
 
 auto authorization_service::authorization(std::int64_t user_id)
-    -> cnetmod::task<std::expected<authorization_dto, cnetnexus::framework::error::error_code>>
+    -> cnetmod::task<std::expected<authorization_dto, cnetboot::framework::error::error_code>>
 {
     auto result = co_await load(user_id);
     if (!result)
@@ -68,7 +68,7 @@ auto authorization_service::authorization(std::int64_t user_id)
 }
 
 auto authorization_service::load(std::int64_t user_id)
-    -> cnetmod::task<std::expected<snapshot, cnetnexus::framework::error::error_code>>
+    -> cnetmod::task<std::expected<snapshot, cnetboot::framework::error::error_code>>
 {
     snapshot response{.authorization = {.user_id = user_id}};
     auto role_rows = co_await roles_->find_by_user_id(user_id);
@@ -110,7 +110,7 @@ auto authorization_service::load(std::int64_t user_id)
 auto authorization_service::visible_departments(
     const std::vector<std::int64_t>& roots,
     department_selection selection)
-    -> cnetmod::task<std::expected<std::vector<std::int64_t>, cnetnexus::framework::error::error_code>>
+    -> cnetmod::task<std::expected<std::vector<std::int64_t>, cnetboot::framework::error::error_code>>
 {
     if (roots.empty())
         co_return std::vector<std::int64_t>{};
@@ -157,7 +157,7 @@ auto authorization_service::visible_departments(
 
 auto authorization_service::principal(
     std::int64_t user_id, std::int64_t department_id)
-    -> cnetmod::task<std::expected<principal_authorization, cnetnexus::framework::error::error_code>>
+    -> cnetmod::task<std::expected<principal_authorization, cnetboot::framework::error::error_code>>
 {
     auto result = co_await load(user_id);
     if (!result)
@@ -244,4 +244,4 @@ auto authorization_service::principal(
     };
 }
 
-} // namespace cnetnexus::system
+} // namespace cnetboot::system

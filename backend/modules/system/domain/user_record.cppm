@@ -2,12 +2,12 @@ module;
 
 #include <cnetmod/orm.hpp>
 
-export module cnetnexus.system.domain.user_record;
+export module cnetboot.system.domain.user_record;
 
 import std;
 import cnetmod.orm;
 
-export namespace cnetnexus::system {
+export namespace cnetboot::system {
 
 /** Read-only projection returned by the joined user list statement. */
 struct user_list_row
@@ -27,9 +27,9 @@ struct user_count_row
     std::int64_t total{};
 };
 
-} // namespace cnetnexus::system
+} // namespace cnetboot::system
 
-CNETMOD_PROJECTION(cnetnexus::system::user_list_row,
+CNETMOD_PROJECTION(cnetboot::system::user_list_row,
     CNETMOD_FIELD(user_id, "user_id", bigint),
     CNETMOD_FIELD(dept_id, "dept_id", bigint),
     CNETMOD_FIELD(user_name, "user_name", varchar),
@@ -38,5 +38,5 @@ CNETMOD_PROJECTION(cnetnexus::system::user_list_row,
     CNETMOD_FIELD(status, "status", int_),
     CNETMOD_FIELD(dept_name, "dept_name", varchar))
 
-CNETMOD_PROJECTION(cnetnexus::system::user_count_row,
+CNETMOD_PROJECTION(cnetboot::system::user_count_row,
     CNETMOD_FIELD(total, "total", bigint))

@@ -1,17 +1,17 @@
-module cnetnexus.reading.service.llm_service;
+module cnetboot.ai.service.llm_service;
 
 import std;
 import cnetmod.coro.task;
-import cnetnexus.framework.error;
-import cnetnexus.reading.domain.llm_contract;
+import cnetboot.framework.error;
+import cnetboot.ai.domain.llm_contract;
 
-namespace cnetnexus::reading {
+namespace cnetboot::ai {
 
 auto unavailable_llm_service::complete(const llm_request&)
     -> cnetmod::task<std::expected<llm_completion,
-        cnetnexus::framework::error::error_code>>
+        cnetboot::framework::error::error_code>>
 {
-    co_return std::unexpected{cnetnexus::framework::error::error_code::upstream_unavailable};
+    co_return std::unexpected{cnetboot::framework::error::error_code::upstream_unavailable};
 }
 
-} // namespace cnetnexus::reading
+} // namespace cnetboot::ai

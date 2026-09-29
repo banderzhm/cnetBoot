@@ -1,9 +1,8 @@
-module cnetnexus.chat.domain.chat_domain;
+module cnetboot.chat.domain.chat_domain;
 
 import std;
-import cnetnexus.chart.domain.naming;
 
-namespace cnetnexus::chat {
+namespace cnetboot::chat {
 
 auto count_characters(std::string_view text) noexcept -> std::size_t
 {
@@ -22,13 +21,16 @@ auto is_valid_role(std::string_view role) noexcept -> bool
     return role == role_system || role == role_user || role == role_assistant;
 }
 
-auto normalize_algorithm(std::string_view raw) -> std::optional<std::string>
+auto normalize_category(std::string_view raw) -> std::optional<std::string>
 {
-    if (raw.empty())
+    const auto first = raw.find_first_not_of(" \t\r\n");
+    if (first == std::string_view::npos)
         return std::string{};
-    if (!cnetnexus::chart::is_known_algorithm(raw))
+    const auto last = raw.find_last_not_of(" \t\r\n");
+    const auto normalized = raw.substr(first, last - first + 1);
+    if (count_characters(normalized) > max_category_characters)
         return std::nullopt;
-    return cnetnexus::chart::canonical_algorithm(raw);
+    return std::string{normalized};
 }
 
 auto normalize_temperature(double raw) noexcept -> std::optional<double>
@@ -56,7 +58,7 @@ auto estimate_tokens(std::string_view text) noexcept -> std::size_t
 }
 
 auto build_chat_context(const chat_session& session, std::span<const chat_message> history,
-    std::string_view chart_context, std::string_view pending_user_content, const chat_context_options& options)
+    std::string_view reference_context, std::string_view pending_user_content, const chat_context_options& options)
     -> chat_context
 {
     std::vector<context_message> window;
@@ -99,11 +101,11 @@ auto build_chat_context(const chat_session& session, std::span<const chat_messag
     if (auto prompt = effective_system_prompt(session, options.default_system_prompt); !prompt.empty())
         messages.push_back(context_message{.role = std::string{role_system}, .content = std::move(prompt)});
 
-    if (!chart_context.empty())
+    if (!reference_context.empty())
     {
-        std::string content{chart_context_prefix};
+        std::string content{reference_context_prefix};
         content += '\n';
-        content.append(chart_context);
+        content.append(reference_context);
         messages.push_back(context_message{.role = std::string{role_system}, .content = std::move(content)});
     }
 
@@ -117,4 +119,4 @@ auto build_chat_context(const chat_session& session, std::span<const chat_messag
     return chat_context{.messages = std::move(messages), .trim = trim};
 }
 
-} // namespace cnetnexus::chat
+} // namespace cnetboot::chat

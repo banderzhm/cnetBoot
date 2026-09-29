@@ -5,19 +5,19 @@ module;
 /**
  * @brief Typed transport projections for the chat bounded context.
  */
-export module cnetnexus.chat.dto.chat;
+export module cnetboot.chat.dto.chat;
 
 import std;
 import cnetmod.json;
-import cnetnexus.chat.domain.chat_domain;
-import cnetnexus.framework.pagination;
+import cnetboot.chat.domain.chat_domain;
+import cnetboot.framework.pagination;
 
-export namespace cnetnexus::chat::dto {
+export namespace cnetboot::chat::dto {
 
 /** @brief 会话写入请求体（新建与 PATCH 共用）。 */
 struct chat_session_request
 {
-    std::optional<std::string> algorithm;
+    std::optional<std::string> category;
     std::optional<std::string> title;
     std::optional<std::string> systemPrompt;
     std::optional<std::string> model;
@@ -28,7 +28,7 @@ struct chat_session_request
 struct chat_message_request
 {
     std::optional<std::string> content;
-    std::optional<cnetmod::json::raw_value> chartContext;
+    std::optional<cnetmod::json::raw_value> context;
     std::optional<bool> stream;
 };
 
@@ -37,7 +37,7 @@ struct chat_session_response
 {
     std::uint64_t id{};
     std::string title;
-    std::string algorithm;
+    std::string category;
     std::string systemPrompt;
     std::string model;
     double temperature{};
@@ -69,15 +69,15 @@ template <typename T> struct chat_page_response
     int page_size{};
 };
 
-[[nodiscard]] auto project(const cnetnexus::chat::chat_session& value)
+[[nodiscard]] auto project(const cnetboot::chat::chat_session& value)
     -> chat_session_response;
-[[nodiscard]] auto project(const cnetnexus::chat::chat_message& value)
+[[nodiscard]] auto project(const cnetboot::chat::chat_message& value)
     -> chat_message_response;
 
 /** @brief 把分页结果投影成分页响应。 */
 template <typename Entity, typename Projection>
 [[nodiscard]] auto project_chat_page(
-    const cnetnexus::framework::pagination::page_result<Entity>& page,
+    const cnetboot::framework::pagination::page_result<Entity>& page,
     Projection&& projection)
     -> chat_page_response<std::invoke_result_t<Projection, const Entity&>>
 {
@@ -111,4 +111,4 @@ template <typename T, typename ToDocument>
         {"pageSize", value.page_size}});
 }
 
-} // namespace cnetnexus::chat::dto
+} // namespace cnetboot::chat::dto

@@ -1,17 +1,17 @@
-export module cnetnexus.chat.service.chat_service_factory;
+export module cnetboot.chat.service.chat_service_factory;
 
 import std;
 import cnetmod.application;
 import cnetmod.orm;
-import cnetnexus.chat.domain.chat_domain;
-import cnetnexus.chat.domain.chat_record;
-import cnetnexus.chat.mapper.chat_mapper;
-import cnetnexus.chat.service.chat_service;
-import cnetnexus.framework.audit;
-import cnetnexus.framework.error;
-import cnetnexus.reading.service.llm_service;
+import cnetboot.chat.domain.chat_domain;
+import cnetboot.chat.domain.chat_record;
+import cnetboot.chat.mapper.chat_mapper;
+import cnetboot.chat.service.chat_service;
+import cnetboot.framework.audit;
+import cnetboot.framework.error;
+import cnetboot.ai.service.llm_service;
 
-export namespace cnetnexus::chat {
+export namespace cnetboot::chat {
 
 /** One request-bound chat service and its mapper implementation. */
 struct chat_service_scope
@@ -20,8 +20,8 @@ struct chat_service_scope
         cnetmod::application::managed_repository<chat_session_record> sessions,
         cnetmod::application::managed_repository<chat_message_record> messages,
         std::shared_ptr<const cnetmod::orm::mapper_registry> registry,
-        cnetnexus::reading::llm_service& llm,
-        cnetnexus::framework::audit_log_service& audit,
+        cnetboot::ai::llm_service& llm,
+        cnetboot::framework::audit_log_service& audit,
         const chat_options& options);
 
     mysql_chat_mapper mapper;
@@ -34,8 +34,8 @@ class chat_service_factory
 public:
     chat_service_factory(
         std::shared_ptr<const cnetmod::orm::mapper_registry> registry,
-        cnetnexus::reading::llm_service& llm,
-        cnetnexus::framework::audit_log_service& audit,
+        cnetboot::ai::llm_service& llm,
+        cnetboot::framework::audit_log_service& audit,
         chat_options options) noexcept;
 
     [[nodiscard]] auto make(
@@ -45,9 +45,9 @@ public:
 
 private:
     std::shared_ptr<const cnetmod::orm::mapper_registry> registry_;
-    cnetnexus::reading::llm_service* llm_;
-    cnetnexus::framework::audit_log_service* audit_;
+    cnetboot::ai::llm_service* llm_;
+    cnetboot::framework::audit_log_service* audit_;
     chat_options options_;
 };
 
-} // namespace cnetnexus::chat
+} // namespace cnetboot::chat

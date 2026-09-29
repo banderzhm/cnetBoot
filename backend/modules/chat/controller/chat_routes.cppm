@@ -2,20 +2,20 @@ module;
 
 #include <cnetmod/json_codec.hpp>
 
-export module cnetnexus.chat.controller.chat_routes;
+export module cnetboot.chat.controller.chat_routes;
 
 import std;
 import cnetmod.protocol.http;
-import cnetnexus.chat.controller.chat_route_context;
-import cnetnexus.chat.service.chat_service;
-import cnetnexus.chat.service.chat_service_factory;
-import cnetnexus.framework.web.route_handler;
+import cnetboot.chat.controller.chat_route_context;
+import cnetboot.chat.service.chat_service;
+import cnetboot.chat.service.chat_service_factory;
+import cnetboot.framework.web.route_handler;
 
-export namespace cnetnexus::chat {
+export namespace cnetboot::chat {
 
 /** @brief 声明多轮对话路由（全部需要 Bearer 令牌）：
  *  - POST   /api/v1/chat/sessions 新建会话（chat:session:create）
- *  - GET    /api/v1/chat/sessions?algorithm=&page=&page_size=
+ *  - GET    /api/v1/chat/sessions?category=&page=&page_size=
  *                                                     会话列表（chat:session:list）
  *  - GET    /api/v1/chat/sessions/:id 会话详情（chat:session:list）
  *  - PATCH  /api/v1/chat/sessions/:id
@@ -31,6 +31,6 @@ export namespace cnetnexus::chat {
  */
 void declare_chat_routes(
     cnetmod::http::router &routes,
-    cnetnexus::chat::chat_service_resolver resolve_chat);
+    cnetboot::chat::chat_service_resolver resolve_chat);
 
-} // namespace cnetnexus::chat
+} // namespace cnetboot::chat

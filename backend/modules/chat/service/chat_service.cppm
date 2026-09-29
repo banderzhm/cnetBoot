@@ -1,26 +1,26 @@
 /**
  * @brief 多轮对话用例：会话 CRUD、上下文组装、调用 LLM 并落库。
  *
- * 与算法无关：algorithm 只用于分组与检索，绝不参与任何排盘计算。
+ * category 只是应用自定义分组标签，不参与模型选择或提示词推导。
  * LLM 未装配（未配置模型）时发送消息返回 DEPENDENCY.UNAVAILABLE，不静默降级。
  * 只有纯计算的 assemble_context 保持同步；一切触及映射器的方法都是协程。
  */
-export module cnetnexus.chat.service.chat_service;
+export module cnetboot.chat.service.chat_service;
 
 import std;
 import cnetmod.coro.task;
-import cnetnexus.chat.domain.chat_domain;
-import cnetnexus.chat.mapper.chat_mapper;
-import cnetnexus.framework.audit;
-import cnetnexus.framework.error;
-import cnetnexus.framework.pagination;
-import cnetnexus.reading.domain.llm_contract;
-import cnetnexus.reading.service.llm_service;
+import cnetboot.chat.domain.chat_domain;
+import cnetboot.chat.mapper.chat_mapper;
+import cnetboot.framework.audit;
+import cnetboot.framework.error;
+import cnetboot.framework.pagination;
+import cnetboot.ai.domain.llm_contract;
+import cnetboot.ai.service.llm_service;
 
-export namespace cnetnexus::chat {
+export namespace cnetboot::chat {
 
-namespace pagination = cnetnexus::framework::pagination;
-namespace error = cnetnexus::framework::error;
+namespace pagination = cnetboot::framework::pagination;
+namespace error = cnetboot::framework::error;
 
 /** @brief 会话标题长度上限（字节）；与 chat_session.title 列宽一致。 */
 inline constexpr std::size_t max_session_title_length = 128;
@@ -33,15 +33,15 @@ inline constexpr std::size_t max_model_length = 64;
 
 /** @brief 新建会话请求；has_temperature 区分「请求未提供」与「显式 0」。
  *
- *  chartContext 不出现在会话对象里，创建时被忽略（它属于单次发送消息的入参）。
+ *  context 不出现在会话对象里，创建时被忽略（它属于单次发送消息的入参）。
  */
 struct chat_session_create_request
 {
-    std::string algorithm;                                          ///< 术数标识；空表示不分组
+    std::string category;                                          ///< 应用自定义分类；空表示不分组
     std::string title;                                              ///< 标题；空表示用默认标题
     std::string system_prompt;                                      ///< 自定义系统提示词；空表示用服务默认
     std::string model;                                              ///< 模型覆盖；空表示用服务默认
-    double temperature{cnetnexus::chat::default_temperature};       ///< 采样温度
+    double temperature{cnetboot::chat::default_temperature};       ///< 采样温度
     bool has_temperature{false};                                    ///< 请求体是否提供了 temperature
 };
 
@@ -55,30 +55,30 @@ struct chat_session_patch
     std::string title;                                              ///< 新标题
     std::string system_prompt;                                      ///< 新系统提示词
     std::string model;                                              ///< 新模型
-    double temperature{cnetnexus::chat::default_temperature};       ///< 新温度
+    double temperature{cnetboot::chat::default_temperature};       ///< 新温度
 };
 
 /** @brief 发送消息请求。 */
 struct chat_message_request
 {
     std::string content; ///< 用户输入
-    /// 当前盘面摘要（**已由 transport 归一化为文本**）；非空时作为一条 system 消息注入上下文；
-    /// 上限见 domain 的 max_chart_context_characters（50000 字）。
-    std::string chart_context;
+    /// 调用方参考上下文（**已由 transport 归一化为文本**）；非空时作为 system 消息注入；
+    /// 上限见 domain 的 max_reference_context_characters（50000 字）。
+    std::string reference_context;
 };
 
 /** @brief 一次完整回合：用户消息与助手消息（都已落库）。 */
 struct chat_turn
 {
-    cnetnexus::chat::chat_message user_message;      ///< 本轮用户消息
-    cnetnexus::chat::chat_message assistant_message; ///< 本轮助手消息
+    cnetboot::chat::chat_message user_message;      ///< 本轮用户消息
+    cnetboot::chat::chat_message assistant_message; ///< 本轮助手消息
 };
 
 /** @brief 对话服务配置。 */
 struct chat_options
 {
-    std::size_t history_limit{cnetnexus::chat::default_history_limit}; ///< 上下文回灌的最近 N 条
-    std::size_t token_budget{cnetnexus::chat::default_token_budget};   ///< 上下文估算 token 预算
+    std::size_t history_limit{cnetboot::chat::default_history_limit}; ///< 上下文回灌的最近 N 条
+    std::size_t token_budget{cnetboot::chat::default_token_budget};   ///< 上下文估算 token 预算
     std::string system_prompt;                                         ///< 服务默认系统提示词
     std::string provider;                                              ///< 服务默认供应商名；空表示由 LLM 服务取配置默认值
     std::string model;                                                 ///< 服务默认模型
@@ -87,13 +87,13 @@ struct chat_options
 };
 
 /** @brief 流式增量回调：返回 false 表示下游已断开（服务会中断上游流并落库已生成部分）。 */
-using chat_delta_sink = cnetnexus::reading::llm_delta_sink;
+using chat_delta_sink = cnetboot::ai::llm_delta_sink;
 
 /** @brief 一次上下文组装的结果：服务侧消息序列 + 历史窗口的裁剪观测。 */
 struct chat_context_assembly
 {
-    std::vector<cnetnexus::reading::llm_message> messages; ///< 已投影到 LLM 请求的消息序列
-    cnetnexus::chat::context_trim_result trim;             ///< 历史窗口裁剪量
+    std::vector<cnetboot::ai::llm_message> messages; ///< 已投影到 LLM 请求的消息序列
+    cnetboot::chat::context_trim_result trim;             ///< 历史窗口裁剪量
 };
 
 /**
@@ -105,8 +105,8 @@ struct chat_context_assembly
 class chat_service
 {
 public:
-    chat_service(mysql_chat_mapper& mapper, cnetnexus::reading::llm_service& llm,
-        cnetnexus::framework::audit_log_service* audit) noexcept
+    chat_service(mysql_chat_mapper& mapper, cnetboot::ai::llm_service& llm,
+        cnetboot::framework::audit_log_service* audit) noexcept
         : mapper_{&mapper},
           llm_{&llm},
           audit_{audit}
@@ -127,62 +127,62 @@ public:
 
     /** @brief 新建会话。 */
     [[nodiscard]] auto create_session(const chat_session_create_request& request,
-        const cnetnexus::framework::audit_actor& actor)
-        -> cnetmod::task<std::expected<cnetnexus::chat::chat_session, error::error_code>>;
+        const cnetboot::framework::audit_actor& actor)
+        -> cnetmod::task<std::expected<cnetboot::chat::chat_session, error::error_code>>;
 
     /** @brief 分页检索会话。 */
-    [[nodiscard]] auto list_sessions(const cnetnexus::chat::chat_session_query& query)
-        -> cnetmod::task<std::expected<pagination::page_result<cnetnexus::chat::chat_session>,
+    [[nodiscard]] auto list_sessions(const cnetboot::chat::chat_session_query& query)
+        -> cnetmod::task<std::expected<pagination::page_result<cnetboot::chat::chat_session>,
             error::error_code>>;
 
     /** @brief 按 ID 查询会话；不存在返回 CHAT.SESSION_NOT_FOUND。 */
     [[nodiscard]] auto find_session(std::uint64_t id)
-        -> cnetmod::task<std::expected<cnetnexus::chat::chat_session, error::error_code>>;
+        -> cnetmod::task<std::expected<cnetboot::chat::chat_session, error::error_code>>;
 
     /** @brief 局部更新会话；未提供的字段保持原值。 */
     [[nodiscard]] auto update_session(std::uint64_t id, const chat_session_patch& patch,
-        const cnetnexus::framework::audit_actor& actor)
-        -> cnetmod::task<std::expected<cnetnexus::chat::chat_session, error::error_code>>;
+        const cnetboot::framework::audit_actor& actor)
+        -> cnetmod::task<std::expected<cnetboot::chat::chat_session, error::error_code>>;
 
     /** @brief 逻辑删除会话；不存在返回 CHAT.SESSION_NOT_FOUND。 */
     [[nodiscard]] auto remove_session(std::uint64_t id,
-        const cnetnexus::framework::audit_actor& actor)
+        const cnetboot::framework::audit_actor& actor)
         -> cnetmod::task<std::expected<void, error::error_code>>;
 
     /** @brief 会话消息分页（按时间正序）；会话不存在返回 CHAT.SESSION_NOT_FOUND。 */
     [[nodiscard]] auto list_messages(std::uint64_t session_id, const pagination::page_request& page)
-        -> cnetmod::task<std::expected<pagination::page_result<cnetnexus::chat::chat_message>,
+        -> cnetmod::task<std::expected<pagination::page_result<cnetboot::chat::chat_message>,
             error::error_code>>;
 
     /** @brief 非流式发送：一次补全，用户消息与助手消息都落库。
      *  @return 本轮两条消息；LLM 失败返回 ALGORITHM.FAILED（用户消息已落库，可重发） */
     [[nodiscard]] auto send_message(std::uint64_t session_id, const chat_message_request& request,
-        const cnetnexus::framework::audit_actor& actor)
+        const cnetboot::framework::audit_actor& actor)
         -> cnetmod::task<std::expected<chat_turn, error::error_code>>;
 
     /** @brief 流式发送：增量依次交给 sink，成功后落库助手消息。
      *  @param sink 增量回调；返回 false 表示下游断开（仍会把已生成内容落库） */
     [[nodiscard]] auto stream_message(std::uint64_t session_id, const chat_message_request& request,
-        const cnetnexus::framework::audit_actor& actor, const chat_delta_sink& sink)
+        const cnetboot::framework::audit_actor& actor, const chat_delta_sink& sink)
         -> cnetmod::task<std::expected<chat_turn, error::error_code>>;
 
     /** @brief 组装多轮上下文（纯逻辑，供用例直接校验顺序、条数与预算截断）。 */
-    [[nodiscard]] auto assemble_context(const cnetnexus::chat::chat_session& session,
-        std::span<const cnetnexus::chat::chat_message> history, std::string_view chart_context,
+    [[nodiscard]] auto assemble_context(const cnetboot::chat::chat_session& session,
+        std::span<const cnetboot::chat::chat_message> history, std::string_view reference_context,
         std::string_view pending_user_content) const -> chat_context_assembly;
 
 private:
     /** @brief 一次发送的准备工作：会话、已落库的用户消息、组装好的 LLM 请求。 */
     struct turn_plan
     {
-        cnetnexus::chat::chat_session session;      ///< 会话（可能已刷新首条标题）
-        cnetnexus::chat::chat_message user_message; ///< 已落库的用户消息
-        cnetnexus::reading::llm_request request;    ///< 组装好的请求
+        cnetboot::chat::chat_session session;      ///< 会话（可能已刷新首条标题）
+        cnetboot::chat::chat_message user_message; ///< 已落库的用户消息
+        cnetboot::ai::llm_request request;    ///< 组装好的请求
     };
 
     /// @brief 校验入参、刷新首条标题、装配上下文并落库用户消息。
     [[nodiscard]] auto prepare_turn(std::uint64_t session_id, const chat_message_request& request,
-        const cnetnexus::framework::audit_actor& actor)
+        const cnetboot::framework::audit_actor& actor)
         -> cnetmod::task<std::expected<turn_plan, error::error_code>>;
 
     /// @brief 落库助手消息并组装返回值。
@@ -190,18 +190,18 @@ private:
         int tokens_out) -> cnetmod::task<std::expected<chat_turn, error::error_code>>;
 
     /// @brief 按会话、历史与本轮输入组装 LLM 请求。
-    [[nodiscard]] auto build_llm_request(const cnetnexus::chat::chat_session& session,
-        const chat_message_request& request) const -> cnetmod::task<cnetnexus::reading::llm_request>;
+    [[nodiscard]] auto build_llm_request(const cnetboot::chat::chat_session& session,
+        const chat_message_request& request) const -> cnetmod::task<cnetboot::ai::llm_request>;
 
     /// @brief 首条消息时把默认标题替换成消息摘要（UTF-8 安全截断）。
-    [[nodiscard]] auto refresh_title(const cnetnexus::chat::chat_session& session,
-        std::string_view content, const cnetnexus::framework::audit_actor& actor)
-        -> cnetmod::task<std::expected<cnetnexus::chat::chat_session, error::error_code>>;
+    [[nodiscard]] auto refresh_title(const cnetboot::chat::chat_session& session,
+        std::string_view content, const cnetboot::framework::audit_actor& actor)
+        -> cnetmod::task<std::expected<cnetboot::chat::chat_session, error::error_code>>;
 
     mysql_chat_mapper* mapper_;
-    cnetnexus::reading::llm_service* llm_;
-    cnetnexus::framework::audit_log_service* audit_{nullptr};
+    cnetboot::ai::llm_service* llm_;
+    cnetboot::framework::audit_log_service* audit_{nullptr};
     chat_options options_{};
 };
 
-} // namespace cnetnexus::chat
+} // namespace cnetboot::chat

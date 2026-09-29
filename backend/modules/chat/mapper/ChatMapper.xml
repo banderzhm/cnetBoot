@@ -23,8 +23,8 @@
     <if test="session_id != null and session_id &gt; 0">
       s.id = #{session_id}
     </if>
-    <if test="algorithm != null and algorithm != ''">
-      AND s.algorithm = #{algorithm}
+    <if test="category != null and category != ''">
+      AND s.category = #{category}
     </if>
   </sql>
 

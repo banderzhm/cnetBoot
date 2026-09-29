@@ -1,18 +1,18 @@
-export module cnetnexus.system.service.user_service;
+export module cnetboot.system.service.user_service;
 
 import std;
 import cnetmod.application;
 import cnetmod.coro.task;
 import cnetmod.orm;
-import cnetnexus.framework.error;
-import cnetnexus.framework.pagination;
-import cnetnexus.system.domain.sys_user;
-import cnetnexus.system.domain.user_record;
-import cnetnexus.system.dto.user;
-import cnetnexus.system.mapper.user;
-import cnetnexus.system.mapper.registry;
+import cnetboot.framework.error;
+import cnetboot.framework.pagination;
+import cnetboot.system.domain.sys_user;
+import cnetboot.system.domain.user_record;
+import cnetboot.system.dto.user;
+import cnetboot.system.mapper.user;
+import cnetboot.system.mapper.registry;
 
-export namespace cnetnexus::system {
+export namespace cnetboot::system {
 
 /**
  * @brief Executes system-user use cases without exposing SQL or sessions.
@@ -26,21 +26,21 @@ public:
     user_service(user_service&&) = delete;
 
     [[nodiscard]] auto get(std::int64_t user_id)
-        -> cnetmod::task<std::expected<std::optional<user_dto>, cnetnexus::framework::error::error_code>>;
+        -> cnetmod::task<std::expected<std::optional<user_dto>, cnetboot::framework::error::error_code>>;
 
     [[nodiscard]] auto page(
-        cnetnexus::framework::pagination::page_request page,
+        cnetboot::framework::pagination::page_request page,
         std::string_view user_name)
         -> cnetmod::task<std::expected<
-            cnetnexus::framework::pagination::page_result<user_dto>,
-            cnetnexus::framework::error::error_code>>;
+            cnetboot::framework::pagination::page_result<user_dto>,
+            cnetboot::framework::error::error_code>>;
 
     [[nodiscard]] auto create(sys_user user)
-        -> cnetmod::task<std::expected<user_dto, cnetnexus::framework::error::error_code>>;
+        -> cnetmod::task<std::expected<user_dto, cnetboot::framework::error::error_code>>;
     [[nodiscard]] auto update(sys_user user)
-        -> cnetmod::task<std::expected<void, cnetnexus::framework::error::error_code>>;
+        -> cnetmod::task<std::expected<void, cnetboot::framework::error::error_code>>;
     [[nodiscard]] auto remove(std::int64_t user_id)
-        -> cnetmod::task<std::expected<void, cnetnexus::framework::error::error_code>>;
+        -> cnetmod::task<std::expected<void, cnetboot::framework::error::error_code>>;
 
 private:
     cnetmod::application::managed_repository<sys_user> users_;
@@ -62,4 +62,4 @@ private:
     std::shared_ptr<system_mapper_registry> registry_;
 };
 
-} // namespace cnetnexus::system
+} // namespace cnetboot::system

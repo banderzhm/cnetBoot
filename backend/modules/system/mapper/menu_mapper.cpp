@@ -1,10 +1,10 @@
-module cnetnexus.system.mapper.menu;
+module cnetboot.system.mapper.menu;
 
 import std;
 import cnetmod.coro.task;
 import cnetmod.orm;
 
-namespace cnetnexus::system {
+namespace cnetboot::system {
 namespace {
 
 constexpr std::string_view find_by_role_ids_statement =
@@ -58,4 +58,4 @@ auto menu_mapper::find_by_role_ids(std::span<const std::int64_t> role_ids)
     co_return std::move(result.data);
 }
 
-} // namespace cnetnexus::system
+} // namespace cnetboot::system

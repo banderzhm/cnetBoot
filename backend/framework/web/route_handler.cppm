@@ -6,13 +6,13 @@
  * authentication, required permissions) is declared with cnetmod endpoint
  * metadata at the registration site.
  */
-export module cnetnexus.framework.web.route_handler;
+export module cnetboot.framework.web.route_handler;
 
 import std;
 import cnetmod.coro.task;
 import cnetmod.protocol.http;
 
-export namespace cnetnexus::framework::web {
+export namespace cnetboot::framework::web {
 
 /**
  * @brief Adapts "named function + dependency struct" to handler_fn.
@@ -98,7 +98,7 @@ private:
 
 /**
  * @brief Metadata of a public route that binds the caller when a valid token
- *        is presented (archive ownership, reading cache partition).
+ *        is presented (for example, a public profile with personalized data).
  */
 [[nodiscard]] inline auto optional_identity() -> cnetmod::http::endpoint_metadata
 {
@@ -106,4 +106,4 @@ private:
         cnetmod::http::optional_authentication{}};
 }
 
-} // namespace cnetnexus::framework::web
+} // namespace cnetboot::framework::web

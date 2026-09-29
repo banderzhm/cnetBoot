@@ -4,13 +4,13 @@
  * Audit rows are append-only. Passwords, tokens and full sensitive bodies must
  * never reach an audit detail string.
  */
-export module cnetnexus.framework.audit;
+export module cnetboot.framework.audit;
 
 import std;
 import cnetmod.coro.task;
-import cnetnexus.framework.error;
+import cnetboot.framework.error;
 
-export namespace cnetnexus::framework {
+export namespace cnetboot::framework {
 
 /** @brief Audit action classification; every write path records one row. */
 inline constexpr std::string_view audit_action_login{"login"};
@@ -55,7 +55,7 @@ public:
     /** @brief Appends one audit row.
      *  @param actor operator and request provenance
      *  @param action login / logout / create / update / delete / password
-     *  @param resource audited resource name, e.g. case / tag / sys_user
+     *  @param resource audited resource name, e.g. sys_user / chat_session
      *  @param status_code business result status code
      *  @param detail already-redacted change summary; must not carry secrets
      */
@@ -65,4 +65,4 @@ public:
         -> cnetmod::task<std::expected<void, error::error_code>> = 0;
 };
 
-} // namespace cnetnexus::framework
+} // namespace cnetboot::framework

@@ -1,9 +1,9 @@
-export module cnetnexus.system.dto.auth;
+export module cnetboot.system.dto.auth;
 
 import std;
 import cnetmod.json;
 
-export namespace cnetnexus::system {
+export namespace cnetboot::system {
 
 struct login_request
 {
@@ -22,4 +22,4 @@ struct token_response
     -> cnetmod::json::document;
 [[nodiscard]] auto revoked_document() -> cnetmod::json::document;
 
-} // namespace cnetnexus::system
+} // namespace cnetboot::system

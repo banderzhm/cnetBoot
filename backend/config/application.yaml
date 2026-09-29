@@ -1,8 +1,8 @@
 application:
-  name: cnetnexus
+  name: cnetboot
   install_signal_handlers: true
   # 业务 HTTP 事件循环数；连接固定归属一个循环。连接池上限是全应用总量，按循环平摊，
-  # 因此不得超过任一已启用连接池的 maximum_size（当前受 calculation-cache 的 4 限制）。
+  # 因此不得超过任一已启用连接池的 maximum_size。
   io_threads: 1   # 可由 cnetmod 的 CNETMOD_IO_THREADS 环境层覆盖
 
 crash_dump:
@@ -36,8 +36,8 @@ observability:
 security:
   jwt:
     enabled: true
-    issuer: cnetnexus
-    secret: ${CNETNEXUS_JWT_SECRET}
+    issuer: cnetboot
+    secret: ${CNETBOOT_JWT_SECRET}
     expires_in_seconds: 604800
     session_idle_seconds: 900
 
@@ -49,9 +49,9 @@ services:
     required: true
     host: 127.0.0.1
     port: 3306
-    username: cnetnexus
-    password: ${CNETNEXUS_DATABASE_PASSWORD}
-    database: cnetnexus
+    username: cnetboot
+    password: ${CNETBOOT_DATABASE_PASSWORD}
+    database: cnetboot
     # cnetmod's MySQL auto-configurator accepts minimum_size / maximum_size;
     # "pool_size" is not a known key and makes application_builder::build()
     # fail with errc::invalid_argument before any listener starts.
@@ -70,18 +70,6 @@ services:
     maximum_size: 8
     connect_timeout_ms: 1000
     pool_timeout_ms: 500
-  calculation-cache:
-    type: redis
-    instance: calculation-cache
-    enabled: true
-    required: false
-    host: 127.0.0.1
-    port: 6379
-    minimum_size: 0
-    maximum_size: 4
-    connect_timeout_ms: 500
-    pool_timeout_ms: 100
-
 platform:
   mapper_directory: mapper
 
@@ -94,8 +82,8 @@ chat:
   reasoning_effort: ""
   max_tokens: 1024
 
-# LLM 供应商目录（reading_module 声明的 typed options）。providers 为空表示不启用
-# LLM：解读/对话返回 DEPENDENCY.UNAVAILABLE，/api/v1/llm/providers 返回
+# LLM 供应商目录（ai_module 显式声明的 typed options）。providers 为空表示不启用
+# LLM：对话返回 DEPENDENCY.UNAVAILABLE，/api/v1/llm/providers 返回
 # configured=false。多供应商 / 多 key 配置见 config/llm.providers.example.yaml。
 llm:
   providers: []
@@ -107,8 +95,7 @@ edge:
   trusted_proxies: []
   rate_limits:
     login: {rate_per_second: 0.2, burst: 5}          # 登录：约每 5 秒 1 次，突发 5 次
-    reading: {rate_per_second: 0.05, burst: 3}       # LLM 解读：约每 20 秒 1 次，突发 3 次
-    archive_write: {rate_per_second: 0.2, burst: 5}  # 写存档
+    ai: {rate_per_second: 0.05, burst: 3}             # AI 生成：约每 20 秒 1 次，突发 3 次
 
 # 身份（identity_module 声明）：登录防爆破与授权快照缓存。
 identity:

@@ -1,12 +1,12 @@
-export module cnetnexus.system.mapper.menu;
+export module cnetboot.system.mapper.menu;
 
 import std;
 import cnetmod.application;
 import cnetmod.coro.task;
-import cnetnexus.system.domain.sys_menu;
-import cnetnexus.system.mapper.registry;
+import cnetboot.system.domain.sys_menu;
+import cnetboot.system.mapper.registry;
 
-export namespace cnetnexus::system {
+export namespace cnetboot::system {
 
 /**
  * @brief Strongly typed menu queries backed by the system XML registry.
@@ -26,4 +26,4 @@ private:
     std::shared_ptr<system_mapper_registry> registry_;
 };
 
-} // namespace cnetnexus::system
+} // namespace cnetboot::system

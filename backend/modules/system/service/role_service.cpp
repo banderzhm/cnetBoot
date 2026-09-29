@@ -1,13 +1,13 @@
-module cnetnexus.system.service.role_service;
+module cnetboot.system.service.role_service;
 
 import std;
-import cnetnexus.framework.error;
-import cnetnexus.framework.pagination;
-import cnetnexus.system.service.failure;
+import cnetboot.framework.error;
+import cnetboot.framework.pagination;
+import cnetboot.system.service.failure;
 import cnetmod.coro.task;
 import cnetmod.orm;
 
-namespace cnetnexus::system {
+namespace cnetboot::system {
 namespace {
 
 } // namespace
@@ -21,7 +21,7 @@ role_service::role_service(
 }
 
 auto role_service::get(std::int64_t role_id)
-    -> cnetmod::task<std::expected<std::optional<sys_role>, cnetnexus::framework::error::error_code>>
+    -> cnetmod::task<std::expected<std::optional<sys_role>, cnetboot::framework::error::error_code>>
 {
     auto result = co_await roles_.get_by_id(
         cnetmod::orm::param_value::from_int(role_id));
@@ -31,13 +31,13 @@ auto role_service::get(std::int64_t role_id)
 }
 
 auto role_service::page(
-    cnetnexus::framework::pagination::page_request request,
+    cnetboot::framework::pagination::page_request request,
     std::string_view role_name)
     -> cnetmod::task<std::expected<
-        cnetnexus::framework::pagination::page_result<sys_role>,
-        cnetnexus::framework::error::error_code>>
+        cnetboot::framework::pagination::page_result<sys_role>,
+        cnetboot::framework::error::error_code>>
 {
-    const auto page = cnetnexus::framework::pagination::normalize(request);
+    const auto page = cnetboot::framework::pagination::normalize(request);
     cnetmod::orm::query_wrapper<sys_role> query;
     if (!role_name.empty())
         query.like(&sys_role::role_name, role_name);
@@ -47,7 +47,7 @@ auto role_service::page(
         static_cast<std::size_t>(page.page_size), query);
     if (!result.ok())
         co_return std::unexpected(storage_failure("role", result.records));
-    co_return cnetnexus::framework::pagination::page_result<sys_role>{
+    co_return cnetboot::framework::pagination::page_result<sys_role>{
         .items = std::move(result.records.data),
         .total = static_cast<std::int64_t>(result.total),
         .page = static_cast<int>(result.page),
@@ -55,7 +55,7 @@ auto role_service::page(
 }
 
 auto role_service::list()
-    -> cnetmod::task<std::expected<std::vector<sys_role>, cnetnexus::framework::error::error_code>>
+    -> cnetmod::task<std::expected<std::vector<sys_role>, cnetboot::framework::error::error_code>>
 {
     cnetmod::orm::query_wrapper<sys_role> query;
     query.order_by_asc(&sys_role::role_sort);
@@ -66,7 +66,7 @@ auto role_service::list()
 }
 
 auto role_service::create(sys_role role)
-    -> cnetmod::task<std::expected<sys_role, cnetnexus::framework::error::error_code>>
+    -> cnetmod::task<std::expected<sys_role, cnetboot::framework::error::error_code>>
 {
     if (role.role_name.empty() || role.role_key.empty() ||
         role.data_scope < static_cast<int>(role_data_scope::all) ||
@@ -79,7 +79,7 @@ auto role_service::create(sys_role role)
 }
 
 auto role_service::update(sys_role role)
-    -> cnetmod::task<std::expected<void, cnetnexus::framework::error::error_code>>
+    -> cnetmod::task<std::expected<void, cnetboot::framework::error::error_code>>
 {
     if (role.role_id <= 0 || role.role_name.empty() || role.role_key.empty() ||
         role.data_scope < static_cast<int>(role_data_scope::all) ||
@@ -92,7 +92,7 @@ auto role_service::update(sys_role role)
 }
 
 auto role_service::remove(std::int64_t role_id)
-    -> cnetmod::task<std::expected<void, cnetnexus::framework::error::error_code>>
+    -> cnetmod::task<std::expected<void, cnetboot::framework::error::error_code>>
 {
     cnetmod::orm::query_wrapper<sys_user_role> assigned;
     assigned.eq(&sys_user_role::role_id, role_id);
@@ -109,7 +109,7 @@ auto role_service::remove(std::int64_t role_id)
 }
 
 auto role_service::roles_for_user(std::int64_t user_id)
-    -> cnetmod::task<std::expected<std::vector<sys_role>, cnetnexus::framework::error::error_code>>
+    -> cnetmod::task<std::expected<std::vector<sys_role>, cnetboot::framework::error::error_code>>
 {
     cnetmod::orm::query_wrapper<sys_user_role> query;
     query.eq(&sys_user_role::user_id, user_id);
@@ -130,7 +130,7 @@ auto role_service::roles_for_user(std::int64_t user_id)
 
 auto role_service::assign_to_user(std::int64_t user_id,
     std::span<const std::int64_t> role_ids)
-    -> cnetmod::task<std::expected<void, cnetnexus::framework::error::error_code>>
+    -> cnetmod::task<std::expected<void, cnetboot::framework::error::error_code>>
 {
     auto ids = std::vector<std::int64_t>{role_ids.begin(), role_ids.end()};
     auto replaced = co_await roles_.transaction<void>(
@@ -158,7 +158,7 @@ auto role_service::assign_to_user(std::int64_t user_id,
 }
 
 auto role_service::department_ids(std::int64_t role_id)
-    -> cnetmod::task<std::expected<std::vector<std::int64_t>, cnetnexus::framework::error::error_code>>
+    -> cnetmod::task<std::expected<std::vector<std::int64_t>, cnetboot::framework::error::error_code>>
 {
     cnetmod::orm::query_wrapper<sys_role_dept> query;
     query.eq(&sys_role_dept::role_id, role_id);
@@ -174,7 +174,7 @@ auto role_service::department_ids(std::int64_t role_id)
 
 auto role_service::assign_departments(std::int64_t role_id,
     std::span<const std::int64_t> department_ids)
-    -> cnetmod::task<std::expected<void, cnetnexus::framework::error::error_code>>
+    -> cnetmod::task<std::expected<void, cnetboot::framework::error::error_code>>
 {
     auto ids = std::vector<std::int64_t>{
         department_ids.begin(), department_ids.end()};
@@ -204,4 +204,4 @@ auto role_service::assign_departments(std::int64_t role_id,
     co_return {};
 }
 
-} // namespace cnetnexus::system
+} // namespace cnetboot::system

@@ -1,9 +1,9 @@
-module cnetnexus.framework.web.query;
+module cnetboot.framework.web.query;
 
 import std;
 import cnetmod.protocol.http;
 
-namespace cnetnexus::framework::web::query {
+namespace cnetboot::framework::web::query {
 
 /** @brief 从 application/x-www-form-urlencoded 形式的 query string 中取一个键的值。
  *
@@ -76,4 +76,4 @@ auto path_id(std::string_view raw) -> std::optional<std::uint64_t>
     return result;
 }
 
-} // namespace cnetnexus::framework::web::query
+} // namespace cnetboot::framework::web::query

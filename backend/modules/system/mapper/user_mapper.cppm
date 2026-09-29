@@ -1,14 +1,14 @@
-export module cnetnexus.system.mapper.user;
+export module cnetboot.system.mapper.user;
 
 import std;
 import cnetmod.application;
 import cnetmod.coro.task;
-import cnetnexus.system.domain.sys_user;
-import cnetnexus.system.domain.user_record;
-import cnetnexus.system.mapper.registry;
+import cnetboot.system.domain.sys_user;
+import cnetboot.system.domain.user_record;
+import cnetboot.system.mapper.registry;
 import cnetmod.orm;
 
-export namespace cnetnexus::system {
+export namespace cnetboot::system {
 
 struct user_query_page
 {
@@ -34,4 +34,4 @@ private:
     std::shared_ptr<system_mapper_registry> registry_;
 };
 
-} // namespace cnetnexus::system
+} // namespace cnetboot::system

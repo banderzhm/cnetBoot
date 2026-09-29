@@ -15,26 +15,26 @@
  *    （registration 阶段；未知服务、非 openai、空 api_key、pool_size 越界都在这里拒绝）；
  *  - resolve_llm_target()：一次请求的 (provider, model) 解析（默认值回退、拒绝未知值）。
  *
- * 多 key 的轮询、失败切 key、退避与熔断**不在配置层**：Nexus 的模型适配层显式调用
+ * 多 key 的轮询、失败切 key、退避与熔断**不在配置层**：AI 模型适配层显式调用
  * cnetmod `add_chat_model` 并声明 routing/fallback（见
- * cnetnexus.reading.service.model.composed_llm_service）。
+ * cnetboot.ai.service.model.composed_llm_service）。
  */
-export module cnetnexus.framework.config.llm_settings;
+export module cnetboot.framework.config.llm_settings;
 
 import std;
 import cnetmod.application.configuration;
-import cnetnexus.framework.error;
+import cnetboot.framework.error;
 
-export namespace cnetnexus::framework::config {
+export namespace cnetboot::framework::config {
 
 /** @brief 框架注册错误码；目录解析直接复用它，避免再引入一层私有错误枚举。 */
-using error_code = cnetnexus::framework::error::error_code;
+using error_code = cnetboot::framework::error::error_code;
 
 /// @brief 未配置（没有可用供应商或该供应商没有任何可用 key）：DEPENDENCY.UNAVAILABLE。
 inline constexpr error_code llm_unconfigured_code{error_code::upstream_unavailable};
 
 /// @brief 选择被拒绝（未知 provider / 未知 model / 上游调用失败）：ALGORITHM.FAILED。
-inline constexpr error_code llm_rejected_code{error_code::algorithm_failed};
+inline constexpr error_code llm_rejected_code{error_code::ai_request_failed};
 
 /// @brief cnetmod openai 服务实例连接池上限（与 integration/openai.cpp 的校验一致）。
 inline constexpr std::size_t llm_maximum_pool_size{1024};
@@ -176,4 +176,4 @@ struct llm_provider_view
 [[nodiscard]] auto llm_provider_catalog(const llm_directory& directory)
     -> std::vector<llm_provider_view>;
 
-} // namespace cnetnexus::framework::config
+} // namespace cnetboot::framework::config

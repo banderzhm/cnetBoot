@@ -8,14 +8,14 @@
  * Redis 不可用时 admit() 返回 DEPENDENCY.UNAVAILABLE（fail closed）：登录本身也要
  * 写 Redis 会话，放行只会让防护在故障期间失效。
  */
-export module cnetnexus.system.service.login_guard;
+export module cnetboot.system.service.login_guard;
 
 import std;
 import cnetmod.coro.task;
 import cnetmod.protocol.redis;
-import cnetnexus.framework.error;
+import cnetboot.framework.error;
 
-export namespace cnetnexus::system {
+export namespace cnetboot::system {
 
 /// @brief 登录防护参数（identity.login 配置小节）。
 struct login_protection_options
@@ -42,7 +42,7 @@ public:
      *         Redis 不可用 -> DEPENDENCY.UNAVAILABLE
      */
     [[nodiscard]] auto admit(std::string_view username, std::string_view client)
-        -> cnetmod::task<std::expected<void, cnetnexus::framework::error::error_code>>;
+        -> cnetmod::task<std::expected<void, cnetboot::framework::error::error_code>>;
 
     /// @brief 记一次失败；达到阈值时写入锁。计数失败只记日志，不改变登录结果。
     [[nodiscard]] auto record_failure(std::string_view username, std::string_view client)
@@ -59,4 +59,4 @@ private:
     login_protection_options options_;
 };
 
-} // namespace cnetnexus::system
+} // namespace cnetboot::system

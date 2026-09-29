@@ -1,15 +1,15 @@
-export module cnetnexus.framework.security.authorization;
+export module cnetboot.framework.security.authorization;
 
 import std;
 import cnetmod.protocol.http;
 
-export namespace cnetnexus::security {
+export namespace cnetboot::security {
 
 /**
  * @brief Declares the permission a route requires.
  *
  * Shorthand for endpoint metadata read by authorization_middleware():
- * `routes.get(path, handler, requires_permission("chart:case:list"))`.
+ * `routes.get(path, handler, requires_permission("user:list"))`.
  */
 [[nodiscard]] auto requires_permission(std::string permission)
     -> cnetmod::http::endpoint_metadata;
@@ -40,4 +40,4 @@ export namespace cnetnexus::security {
                                               cnetmod::http::handler_fn handler)
     -> cnetmod::http::handler_fn;
 
-} // namespace cnetnexus::security
+} // namespace cnetboot::security

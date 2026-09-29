@@ -1,4 +1,4 @@
-export module cnetnexus.system.mapper.registry;
+export module cnetboot.system.mapper.registry;
 
 import std;
 import cnetmod.application;
@@ -6,7 +6,7 @@ import cnetmod.application.managed_service;
 import cnetmod.coro.task;
 import cnetmod.orm;
 
-export namespace cnetnexus::system {
+export namespace cnetboot::system {
 
 /**
  * @brief Loads system XML mappers asynchronously and retains an immutable registry.
@@ -42,4 +42,4 @@ private:
     std::string last_error_;
 };
 
-} // namespace cnetnexus::system
+} // namespace cnetboot::system

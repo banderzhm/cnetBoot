@@ -4,22 +4,22 @@
  * 未装配实现（未配置模型）时返回 DEPENDENCY.UNAVAILABLE，不静默降级成本地规则。
  * 流式与非流式共用同一份请求，保证两条路径的提示词逐字节一致。
  */
-export module cnetnexus.reading.service.llm_service;
+export module cnetboot.ai.service.llm_service;
 
 import std;
 import cnetmod.coro.task;
-import cnetnexus.framework.error;
-import cnetnexus.reading.domain.llm_contract;
+import cnetboot.framework.error;
+import cnetboot.ai.domain.llm_contract;
 
-export namespace cnetnexus::reading {
+export namespace cnetboot::ai {
 
 /**
  * @brief 供应商无关的补全实现接口；具体适配器由组合根注入。
  *
- * 多供应商实现（cnetnexus.reading.service.model.composed_llm_service）在内部做
+ * 多供应商实现（cnetboot.ai.service.model.composed_llm_service）在内部做
  * (provider, model) 解析，多 key 轮询与故障转移由 cnetmod 组合模型完成；用例侧只看到
  * 这一个接口，因此
- * reading_service / chat_service 无需知道供应商数量。
+ * chat_service 无需知道供应商数量或密钥轮换策略。
  */
 class llm_service
 {
@@ -47,7 +47,7 @@ public:
      */
     [[nodiscard]] virtual auto complete(const llm_request& request)
         -> cnetmod::task<std::expected<llm_completion,
-            cnetnexus::framework::error::error_code>> = 0;
+            cnetboot::framework::error::error_code>> = 0;
 
     /** @brief 执行一次流式补全，把增量依次交给 sink，最后返回全文与计量。
      *
@@ -58,7 +58,7 @@ public:
      */
     [[nodiscard]] virtual auto stream(const llm_request& request, const llm_delta_sink& sink)
         -> cnetmod::task<std::expected<llm_completion,
-            cnetnexus::framework::error::error_code>>
+            cnetboot::framework::error::error_code>>
     {
         auto result = co_await complete(request);
         if (!result)
@@ -80,7 +80,7 @@ public:
 
     [[nodiscard]] auto complete(const llm_request&)
         -> cnetmod::task<std::expected<llm_completion,
-            cnetnexus::framework::error::error_code>> override;
+            cnetboot::framework::error::error_code>> override;
 };
 
-} // namespace cnetnexus::reading
+} // namespace cnetboot::ai

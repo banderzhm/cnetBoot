@@ -5,7 +5,7 @@
  * requires_permission()，中间件在路由匹配之后读取，不再维护第二份免鉴权白名单。
  * 未匹配任何路由的请求直接落到 404 / 405，不经过认证。
  */
-module cnetnexus.bootstrap.modules;
+module cnetboot.bootstrap.modules;
 
 import std;
 import cnetmod.application;
@@ -15,33 +15,33 @@ import cnetmod.protocol.http;
 import cnetmod.protocol.redis;
 import cnetmod.security.jwt;
 import cnetmod.security.password;
-import cnetnexus.framework.error;
-import cnetnexus.framework.security.authorization;
-import cnetnexus.framework.security.current_user;
-import cnetnexus.framework.security.jwt_security;
-import cnetnexus.framework.web.rate_limit;
-import cnetnexus.system.controller.auth_controller;
-import cnetnexus.system.controller.authorization_controller;
-import cnetnexus.system.controller.user_controller;
-import cnetnexus.system.domain.sys_dept;
-import cnetnexus.system.domain.sys_menu;
-import cnetnexus.system.domain.sys_role;
-import cnetnexus.system.domain.sys_role_dept;
-import cnetnexus.system.domain.sys_user;
-import cnetnexus.system.mapper.menu;
-import cnetnexus.system.mapper.registry;
-import cnetnexus.system.mapper.role;
-import cnetnexus.system.service.authorization_service;
-import cnetnexus.system.service.auth_service;
-import cnetnexus.system.service.login_guard;
-import cnetnexus.system.service.user_service;
+import cnetboot.framework.error;
+import cnetboot.framework.security.authorization;
+import cnetboot.framework.security.current_user;
+import cnetboot.framework.security.jwt_security;
+import cnetboot.framework.web.rate_limit;
+import cnetboot.system.controller.auth_controller;
+import cnetboot.system.controller.authorization_controller;
+import cnetboot.system.controller.user_controller;
+import cnetboot.system.domain.sys_dept;
+import cnetboot.system.domain.sys_menu;
+import cnetboot.system.domain.sys_role;
+import cnetboot.system.domain.sys_role_dept;
+import cnetboot.system.domain.sys_user;
+import cnetboot.system.mapper.menu;
+import cnetboot.system.mapper.registry;
+import cnetboot.system.mapper.role;
+import cnetboot.system.service.authorization_service;
+import cnetboot.system.service.auth_service;
+import cnetboot.system.service.login_guard;
+import cnetboot.system.service.user_service;
 
-namespace cnetnexus::bootstrap {
+namespace cnetboot::bootstrap {
 namespace {
 
     namespace application = cnetmod::application;
-    namespace system = cnetnexus::system;
-    using error_code = cnetnexus::framework::error::error_code;
+    namespace system = cnetboot::system;
+    using error_code = cnetboot::framework::error::error_code;
 
     constexpr std::string_view identity_section{"identity"};
 
@@ -254,8 +254,8 @@ auto identity_module::compose(application::composition_context& context)
                              .current();
     const auto edge = components
                           .get<application::options_monitor<
-                              cnetnexus::framework::web::edge_options>>(
-                              cnetnexus::framework::web::edge_section_name)
+                              cnetboot::framework::web::edge_options>>(
+                              cnetboot::framework::web::edge_section_name)
                           .current();
     auto users = components.shared<application::managed_repository<system::sys_user>>();
     auto authorization = components.shared<system::authorization_service>();
@@ -285,4 +285,4 @@ auto identity_module::compose(application::composition_context& context)
     return {};
 }
 
-} // namespace cnetnexus::bootstrap
+} // namespace cnetboot::bootstrap

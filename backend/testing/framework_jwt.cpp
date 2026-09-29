@@ -7,8 +7,8 @@ import cnetmod.security.jwt;
 
 // JWT 用例：签发、校验、过期、篡改、错误密钥与结构损坏。
 //
-// 迁移自 xuanxue-algorithm tests/jwt_test.cpp（原用手写的 xuanxue.common.jwt），
-// 这里换成 CNetNexus 实际使用的 cnetmod.security.jwt —— CNetNexus 没有自研 JWT，
+// 迁移自 legacy application tests/jwt_test.cpp（原用手写的 xuanxue.common.jwt），
+// 这里换成 cnetBoot 实际使用的 cnetmod.security.jwt —— cnetBoot 没有自研 JWT，
 // 玄学那份实现已随 identity 层一起被框架取代（策略 A），因此断言逐条改写为对
 // **模板实际依赖的实现**的等价断言：
 //  - 签发：三段式（两个 '.'）、载荷可解析、sub/iss/custom 往返；
@@ -31,7 +31,7 @@ auto main() -> int
     auto work = [&]() -> cnetmod::task<void>
     {
         cnetmod::security::jwt_sign_options options{
-            .issuer = "cnetnexus",
+            .issuer = "cnetboot",
             .subject = "1",
             .scopes = {"system:user:list"},
             .lifetime = std::chrono::hours{1},
@@ -70,7 +70,7 @@ auto main() -> int
                 io->stop();
                 co_return;
             }
-            if (claims->issuer != "cnetnexus" || claims->subject != "1")
+            if (claims->issuer != "cnetboot" || claims->subject != "1")
                 verify_code = 6;
             else if (const auto session = claims->custom.find("sid");
                 session == claims->custom.end() || session->second != session_id)
@@ -184,7 +184,7 @@ auto main() -> int
         auto sign_expired = [&]() -> cnetmod::task<void>
         {
             const cnetmod::security::jwt_sign_options options{
-                .issuer = "cnetnexus",
+                .issuer = "cnetboot",
                 .subject = "1",
                 .scopes = {},
                 .lifetime = std::chrono::seconds{-120},

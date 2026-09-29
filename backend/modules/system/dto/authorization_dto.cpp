@@ -1,9 +1,9 @@
-module cnetnexus.system.dto.authorization;
+module cnetboot.system.dto.authorization;
 
 import std;
 import cnetmod.json;
 
-namespace cnetnexus::system {
+namespace cnetboot::system {
 
 auto to_document(const role_dto& value) -> cnetmod::json::document
 {
@@ -48,4 +48,4 @@ auto to_document(const authorization_dto& value) -> cnetmod::json::document
         {"menus", std::move(menus)}});
 }
 
-} // namespace cnetnexus::system
+} // namespace cnetboot::system

@@ -2,12 +2,12 @@ module;
 
 #include <cnetmod/orm.hpp>
 
-export module cnetnexus.system.domain.sys_menu;
+export module cnetboot.system.domain.sys_menu;
 
 import std;
 import cnetmod.orm;
 
-export namespace cnetnexus::system {
+export namespace cnetboot::system {
 
 /**
  * @brief Route, action permission, or menu node visible to a role.
@@ -26,9 +26,9 @@ struct sys_menu {
   int status{};
 };
 
-} // namespace cnetnexus::system
+} // namespace cnetboot::system
 
-CNETMOD_MODEL(cnetnexus::system::sys_menu, "sys_menu",
+CNETMOD_MODEL(cnetboot::system::sys_menu, "sys_menu",
               CNETMOD_FIELD(menu_id, "menu_id", bigint, PK | AUTO_INC),
               CNETMOD_FIELD(parent_id, "parent_id", bigint),
               CNETMOD_FIELD(menu_name, "menu_name", varchar),

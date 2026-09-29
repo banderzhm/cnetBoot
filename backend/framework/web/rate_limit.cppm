@@ -2,7 +2,7 @@
  * @brief 按路由声明的限流策略（端点元数据）+ 客户端地址的可信代理配置。
  *
  * 路由在注册处声明自己属于哪一个策略：
- *   routes.post(path, handler, with_rate_limit(anonymous(), rate_limit_policy::reading));
+ *   routes.post(path, handler, with_rate_limit(anonymous(), rate_limit_policy::ai));
  * rate_limit_middleware() 在路由匹配之后读取该元数据，把请求交给对应策略的 cnetmod
  * rate_limiter；未声明策略的路由不限流。策略是封闭的枚举：路由不可能引用一个
  * 没有配置的策略名。
@@ -10,19 +10,18 @@
  * 客户端地址一律经 cnetmod::http::resolve_client_ip(ctx, trusted_proxies) 解析：
  * 只有来自可信代理的转发头才被采信，客户端无法伪造自己的限流身份。
  */
-export module cnetnexus.framework.web.rate_limit;
+export module cnetboot.framework.web.rate_limit;
 
 import std;
 import cnetmod.protocol.http;
 
-export namespace cnetnexus::framework::web {
+export namespace cnetboot::framework::web {
 
 /// @brief 限流策略；每个策略一份独立的全进程令牌桶（按客户端地址分桶）。
 enum class rate_limit_policy
 {
-    login,         ///< POST /api/auth/login：防口令爆破的第一道闸
-    reading,       ///< LLM 解读：每次调用都产生上游费用
-    archive_write, ///< 写入存档：落盘 / 落库
+    login, ///< POST /api/auth/login：防口令爆破的第一道闸
+    ai,    ///< AI 生成：每次调用都可能产生上游费用
 };
 
 /// @brief 端点元数据：本路由受 policy 限流。
@@ -42,8 +41,7 @@ struct rate_limit_rule
 struct rate_limit_rules
 {
     rate_limit_rule login{.rate_per_second = 0.2, .burst = 5.0};
-    rate_limit_rule reading{.rate_per_second = 0.05, .burst = 3.0};
-    rate_limit_rule archive_write{.rate_per_second = 0.2, .burst = 5.0};
+    rate_limit_rule ai{.rate_per_second = 0.05, .burst = 3.0};
 };
 
 /// @brief 顶层 edge 配置小节：入口层的客户端识别与限流。
@@ -75,4 +73,4 @@ inline constexpr std::string_view edge_section_name{"edge"};
 [[nodiscard]] auto rate_limit_middleware(const edge_options& options)
     -> cnetmod::http::middleware_fn;
 
-} // namespace cnetnexus::framework::web
+} // namespace cnetboot::framework::web

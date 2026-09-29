@@ -1,4 +1,4 @@
-module cnetnexus.framework.error;
+module cnetboot.framework.error;
 
 import std;
 
@@ -6,73 +6,62 @@ namespace {
 
 /// 唯一注册表：新增错误码必须同时补登记表项并更新 contracts/error_codes.yaml。
 constexpr std::array k_registry{
-    cnetnexus::framework::error::error_entry{cnetnexus::framework::error::error_code::ok, "SYSTEM.OK", 200, "成功", "platform", "system", false,
+    cnetboot::framework::error::error_entry{cnetboot::framework::error::error_code::ok, "SYSTEM.OK", 200, "成功", "platform", "system", false,
         true, false},
-    cnetnexus::framework::error::error_entry{cnetnexus::framework::error::error_code::request_invalid_argument, "REQUEST.INVALID_ARGUMENT", 400,
+    cnetboot::framework::error::error_entry{cnetboot::framework::error::error_code::request_invalid_argument, "REQUEST.INVALID_ARGUMENT", 400,
         "请求参数不合法", "platform", "request", false, true, false},
-    cnetnexus::framework::error::error_entry{cnetnexus::framework::error::error_code::algorithm_not_supported, "ALGORITHM.NOT_SUPPORTED", 404,
-        "请求的算法不在支持清单内", "platform", "algorithm", false, true, false},
-    cnetnexus::framework::error::error_entry{cnetnexus::framework::error::error_code::algorithm_failed, "ALGORITHM.FAILED", 422,
-        "算法无法处理当前输入", "platform", "algorithm", false, true, false},
-    cnetnexus::framework::error::error_entry{cnetnexus::framework::error::error_code::bazi_chart_unavailable, "BAZI.CHART_UNAVAILABLE", 503,
-        "命盘暂不可用，请稍后重试", "bazi", "dependency", true, true, false},
-    cnetnexus::framework::error::error_entry{cnetnexus::framework::error::error_code::archive_not_found, "ARCHIVE.NOT_FOUND", 404,
-        "快照不存在或已过期", "platform", "request", false, true, false},
-    cnetnexus::framework::error::error_entry{cnetnexus::framework::error::error_code::upstream_unavailable, "DEPENDENCY.UNAVAILABLE", 503,
+    cnetboot::framework::error::error_entry{cnetboot::framework::error::error_code::category_invalid, "CHAT.CATEGORY_INVALID", 400,
+        "会话分类不合法", "chat", "request", false, true, false},
+    cnetboot::framework::error::error_entry{cnetboot::framework::error::error_code::ai_request_failed, "AI.REQUEST_FAILED", 422,
+        "AI 无法处理当前请求", "ai", "dependency", false, true, false},
+    cnetboot::framework::error::error_entry{cnetboot::framework::error::error_code::upstream_unavailable, "DEPENDENCY.UNAVAILABLE", 503,
         "上游依赖暂不可用，请稍后重试", "platform", "dependency", true, true, false},
-    cnetnexus::framework::error::error_entry{cnetnexus::framework::error::error_code::auth_invalid_credentials, "AUTH.INVALID_CREDENTIALS", 401,
+    cnetboot::framework::error::error_entry{cnetboot::framework::error::error_code::auth_invalid_credentials, "AUTH.INVALID_CREDENTIALS", 401,
         "账号或密码错误", "identity", "authentication", false, true, false},
-    cnetnexus::framework::error::error_entry{cnetnexus::framework::error::error_code::auth_token_missing, "AUTH.TOKEN_MISSING", 401,
+    cnetboot::framework::error::error_entry{cnetboot::framework::error::error_code::auth_token_missing, "AUTH.TOKEN_MISSING", 401,
         "缺少访问令牌", "identity", "authentication", false, true, false},
-    cnetnexus::framework::error::error_entry{cnetnexus::framework::error::error_code::auth_token_invalid, "AUTH.TOKEN_INVALID", 401,
+    cnetboot::framework::error::error_entry{cnetboot::framework::error::error_code::auth_token_invalid, "AUTH.TOKEN_INVALID", 401,
         "访问令牌无效", "identity", "authentication", false, true, false},
-    cnetnexus::framework::error::error_entry{cnetnexus::framework::error::error_code::auth_token_expired, "AUTH.TOKEN_EXPIRED", 401,
+    cnetboot::framework::error::error_entry{cnetboot::framework::error::error_code::auth_token_expired, "AUTH.TOKEN_EXPIRED", 401,
         "访问令牌已过期，请重新登录", "identity", "authentication", false, true, false},
-    cnetnexus::framework::error::error_entry{cnetnexus::framework::error::error_code::auth_forbidden, "AUTH.FORBIDDEN", 403,
+    cnetboot::framework::error::error_entry{cnetboot::framework::error::error_code::auth_forbidden, "AUTH.FORBIDDEN", 403,
         "没有执行该操作的权限", "identity", "authorization", false, true, false},
-    cnetnexus::framework::error::error_entry{cnetnexus::framework::error::error_code::auth_account_locked, "AUTH.ACCOUNT_LOCKED", 423,
+    cnetboot::framework::error::error_entry{cnetboot::framework::error::error_code::auth_account_locked, "AUTH.ACCOUNT_LOCKED", 423,
         "账号已被临时锁定，请稍后重试", "identity", "authentication", true, true, false},
-    cnetnexus::framework::error::error_entry{cnetnexus::framework::error::error_code::auth_account_disabled, "AUTH.ACCOUNT_DISABLED", 403,
+    cnetboot::framework::error::error_entry{cnetboot::framework::error::error_code::auth_account_disabled, "AUTH.ACCOUNT_DISABLED", 403,
         "账号已被停用", "identity", "authentication", false, true, false},
-    cnetnexus::framework::error::error_entry{cnetnexus::framework::error::error_code::user_not_found, "USER.NOT_FOUND", 404, "用户不存在",
+    cnetboot::framework::error::error_entry{cnetboot::framework::error::error_code::user_not_found, "USER.NOT_FOUND", 404, "用户不存在",
         "identity", "request", false, true, false},
-    cnetnexus::framework::error::error_entry{cnetnexus::framework::error::error_code::user_conflict, "USER.CONFLICT", 409, "用户已存在或状态冲突",
+    cnetboot::framework::error::error_entry{cnetboot::framework::error::error_code::user_conflict, "USER.CONFLICT", 409, "用户已存在或状态冲突",
         "identity", "request", false, true, false},
-    cnetnexus::framework::error::error_entry{cnetnexus::framework::error::error_code::role_not_found, "ROLE.NOT_FOUND", 404, "角色不存在",
+    cnetboot::framework::error::error_entry{cnetboot::framework::error::error_code::role_not_found, "ROLE.NOT_FOUND", 404, "角色不存在",
         "identity", "request", false, true, false},
-    cnetnexus::framework::error::error_entry{cnetnexus::framework::error::error_code::role_conflict, "ROLE.CONFLICT", 409,
+    cnetboot::framework::error::error_entry{cnetboot::framework::error::error_code::role_conflict, "ROLE.CONFLICT", 409,
         "角色编码已存在或状态冲突", "identity", "request", false, true, false},
-    cnetnexus::framework::error::error_entry{cnetnexus::framework::error::error_code::permission_not_found, "PERMISSION.NOT_FOUND", 404,
+    cnetboot::framework::error::error_entry{cnetboot::framework::error::error_code::permission_not_found, "PERMISSION.NOT_FOUND", 404,
         "权限不存在", "identity", "request", false, true, false},
-    cnetnexus::framework::error::error_entry{cnetnexus::framework::error::error_code::setting_not_found, "SETTING.NOT_FOUND", 404,
+    cnetboot::framework::error::error_entry{cnetboot::framework::error::error_code::setting_not_found, "SETTING.NOT_FOUND", 404,
         "系统设置不存在", "identity", "request", false, true, false},
-    cnetnexus::framework::error::error_entry{cnetnexus::framework::error::error_code::request_method_not_allowed,
+    cnetboot::framework::error::error_entry{cnetboot::framework::error::error_code::request_method_not_allowed,
         "REQUEST.METHOD_NOT_ALLOWED", 405, "该资源不支持此请求方法", "platform", "request", false, true, false},
-    cnetnexus::framework::error::error_entry{cnetnexus::framework::error::error_code::case_not_found, "CASE.NOT_FOUND", 404, "案例不存在",
-        "platform", "request", false, true, false},
-    cnetnexus::framework::error::error_entry{cnetnexus::framework::error::error_code::tag_not_found, "TAG.NOT_FOUND", 404, "标签不存在",
-        "platform", "request", false, true, false},
-    cnetnexus::framework::error::error_entry{cnetnexus::framework::error::error_code::tag_conflict, "TAG.CONFLICT", 409, "标签名已存在",
-        "platform", "request", false, true, false},
-    cnetnexus::framework::error::error_entry{cnetnexus::framework::error::error_code::chat_session_not_found, "CHAT.SESSION_NOT_FOUND", 404,
+    cnetboot::framework::error::error_entry{cnetboot::framework::error::error_code::chat_session_not_found, "CHAT.SESSION_NOT_FOUND", 404,
         "会话不存在", "chat", "request", false, true, false},
-    cnetnexus::framework::error::error_entry{cnetnexus::framework::error::error_code::department_not_found, "DEPARTMENT.NOT_FOUND", 404,
+    cnetboot::framework::error::error_entry{cnetboot::framework::error::error_code::department_not_found, "DEPARTMENT.NOT_FOUND", 404,
         "部门不存在", "identity", "request", false, true, false},
-    cnetnexus::framework::error::error_entry{cnetnexus::framework::error::error_code::department_conflict, "DEPARTMENT.CONFLICT", 409,
+    cnetboot::framework::error::error_entry{cnetboot::framework::error::error_code::department_conflict, "DEPARTMENT.CONFLICT", 409,
         "部门仍有下级或成员，或层级关系冲突", "identity", "request", false, true, false},
-    cnetnexus::framework::error::error_entry{cnetnexus::framework::error::error_code::request_rate_limited, "REQUEST.RATE_LIMITED", 429,
+    cnetboot::framework::error::error_entry{cnetboot::framework::error::error_code::request_rate_limited, "REQUEST.RATE_LIMITED", 429,
         "请求过于频繁，请稍后重试", "platform", "request", true, true, false},
-    cnetnexus::framework::error::error_entry{cnetnexus::framework::error::error_code::request_not_found, "REQUEST.NOT_FOUND", 404,
+    cnetboot::framework::error::error_entry{cnetboot::framework::error::error_code::request_not_found, "REQUEST.NOT_FOUND", 404,
         "请求的资源路径不存在", "platform", "request", false, true, false},
-    cnetnexus::framework::error::error_entry{cnetnexus::framework::error::error_code::system_internal_error, "SYSTEM.INTERNAL_ERROR", 500,
+    cnetboot::framework::error::error_entry{cnetboot::framework::error::error_code::system_internal_error, "SYSTEM.INTERNAL_ERROR", 500,
         "系统内部错误", "platform", "system", false, false, false},
 };
 
-constexpr std::array k_prefixes{std::string_view{"SYSTEM"}, std::string_view{"REQUEST"}, std::string_view{"ALGORITHM"},
-    std::string_view{"BAZI"}, std::string_view{"ARCHIVE"}, std::string_view{"DEPENDENCY"}, std::string_view{"AUTH"},
+constexpr std::array k_prefixes{std::string_view{"SYSTEM"}, std::string_view{"REQUEST"},
+    std::string_view{"AI"}, std::string_view{"DEPENDENCY"}, std::string_view{"AUTH"},
     std::string_view{"USER"}, std::string_view{"ROLE"}, std::string_view{"PERMISSION"}, std::string_view{"SETTING"},
-    std::string_view{"CASE"}, std::string_view{"TAG"}, std::string_view{"CHAT"},
-    std::string_view{"DEPARTMENT"}};
+    std::string_view{"CHAT"}, std::string_view{"DEPARTMENT"}};
 
 constexpr std::array k_http_statuses{200, 400, 401, 403, 404, 405, 409, 422, 423, 429, 500, 502, 503, 504};
 
@@ -95,7 +84,7 @@ auto is_valid_name(std::string_view name) noexcept -> bool
 
 } // namespace
 
-namespace cnetnexus::framework::error {
+namespace cnetboot::framework::error {
 
 auto registry() noexcept -> std::span<const error_entry>
 {
@@ -154,4 +143,4 @@ auto validate() noexcept -> std::expected<void, std::error_code>
     return {};
 }
 
-} // namespace cnetnexus::framework::error
+} // namespace cnetboot::framework::error

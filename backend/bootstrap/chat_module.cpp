@@ -1,28 +1,28 @@
 /**
  * @brief chat_module：会话持久化、对话服务与路由（全部需要令牌）。
  */
-module cnetnexus.bootstrap.modules;
+module cnetboot.bootstrap.modules;
 
 import std;
 import cnetmod.application;
 import cnetmod.orm;
 import cnetmod.protocol.http;
-import cnetnexus.chat.controller.chat_route_context;
-import cnetnexus.chat.controller.chat_routes;
-import cnetnexus.chat.mapper.chat_mapper;
-import cnetnexus.chat.domain.chat_record;
-import cnetnexus.chat.service.chat_service;
-import cnetnexus.chat.service.chat_service_factory;
-import cnetnexus.framework.audit;
-import cnetnexus.framework.error;
-import cnetnexus.reading.service.llm_service;
+import cnetboot.chat.controller.chat_route_context;
+import cnetboot.chat.controller.chat_routes;
+import cnetboot.chat.mapper.chat_mapper;
+import cnetboot.chat.domain.chat_record;
+import cnetboot.chat.service.chat_service;
+import cnetboot.chat.service.chat_service_factory;
+import cnetboot.framework.audit;
+import cnetboot.framework.error;
+import cnetboot.ai.service.llm_service;
 
-namespace cnetnexus::bootstrap {
+namespace cnetboot::bootstrap {
 namespace {
 
 namespace application = cnetmod::application;
-namespace chat = cnetnexus::chat;
-using error_code = cnetnexus::framework::error::error_code;
+namespace chat = cnetboot::chat;
+using error_code = cnetboot::framework::error::error_code;
 
 class chat_service_resolver_fn
 {
@@ -81,8 +81,8 @@ auto chat_module::register_components(
       [options](application::component_resolver &resolver) {
         return std::make_shared<chat::chat_service_factory>(
             resolver.shared<cnetmod::orm::mapper_registry>(business_statements),
-            resolver.get<cnetnexus::reading::llm_service>(),
-            resolver.get<cnetnexus::framework::audit_log_service>(), *options);
+            resolver.get<cnetboot::ai::llm_service>(),
+            resolver.get<cnetboot::framework::audit_log_service>(), *options);
       });
   return {};
 }
@@ -100,4 +100,4 @@ auto chat_module::compose(application::composition_context &context)
   return {};
 }
 
-} // namespace cnetnexus::bootstrap
+} // namespace cnetboot::bootstrap
