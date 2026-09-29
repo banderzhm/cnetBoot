@@ -237,6 +237,11 @@ AI 每次修改应按以下顺序工作：
 - AI provider 类型越过 `ai/service/model` 边界；
 - system/chat 的 DTO 目录或 AI model 边界被删除。
 
+该门禁通过 CMake 的 `cnetboot_architecture_gate` `ALL` target 接入默认构建，Windows 和
+WSL 构建都必须执行。禁止为了缩短构建而把它改成只在 `BUILD_TESTING=ON` 时创建，
+或者从 `ALL` 中移除。GitHub Actions 的 push/PR 构建也必须调用标准预构建与 backend
+脚本，不得绕过该 target。
+
 标准构建顺序如下。脚本使用 cnetmod 自带 3rdparty 源码构建依赖，不允许使用 vcpkg，且 backend
 只能消费安装后的 CMake package：
 

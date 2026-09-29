@@ -47,6 +47,7 @@ auto main() -> int
     const auto root = std::filesystem::current_path();
     const auto modules = root / "modules";
     const auto repository_instructions = root.parent_path() / "AGENTS.md";
+    const auto build_definition = root / "CMakeLists.txt";
 
     expect.require(std::filesystem::exists(repository_instructions),
         "repository AGENTS.md must exist");
@@ -68,6 +69,16 @@ auto main() -> int
              "wsl_clang_3rdparty_build.sh", "wsl_clang_build.sh"})
         expect.require(std::filesystem::exists(repository_root / "script" / script),
             std::format("required build script is missing: {}", script));
+    expect.require(std::filesystem::exists(repository_root / ".github/workflows/build.yml"),
+        "GitHub push and pull requests must execute the build and architecture gate");
+    expect.require(std::filesystem::exists(build_definition),
+        "backend CMakeLists.txt must exist");
+    if (std::filesystem::exists(build_definition))
+    {
+        const auto cmake = read_text(build_definition);
+        expect.require(cmake.contains("add_custom_target(cnetboot_architecture_gate ALL"),
+            "the architecture gate must execute as part of every default build");
+    }
 
     const std::set<std::string> allowed_modules{"ai", "chat", "system"};
     for (const auto& entry : std::filesystem::directory_iterator{modules})

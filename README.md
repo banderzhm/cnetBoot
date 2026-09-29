@@ -81,6 +81,10 @@ Windows 安装目录为 `3rdparty/windows`。默认限制 cnetmod 编译并行�
 完整构建占用过多内存；可按机器容量传 `-Jobs` 调整。
 WSL 默认并行度为 2，可用 `CNETBOOT_JOBS` 显式调整。
 
+`cnetboot_architecture_gate` 是默认构建的强制 `ALL` target，无论是否开启其它测试都会
+执行；分层、命名、cnetmod 依赖布局或构建脚本违规时，backend 构建直接失败。
+GitHub Actions 在 main 的 push 和 pull request 上执行相同预构建、backend 构建和测试流程。
+
 ## 扩展规则
 
 1. 新业务必须创建具名模块，不允许用 `batch_service`、`common_service` 等无业务含义名称。

@@ -217,6 +217,18 @@ file(COPY modules/system/mapper DESTINATION "${CMAKE_CURRENT_BINARY_DIR}")
 file(COPY migrations DESTINATION "${CMAKE_CURRENT_BINARY_DIR}")
 configure_file(modules/chat/mapper/ChatMapper.xml mapper/ChatMapper.xml COPYONLY)
 
+add_executable(cnetboot_framework_layering_boundaries_test
+    testing/framework_layering_boundaries.cpp)
+target_link_libraries(cnetboot_framework_layering_boundaries_test PRIVATE
+    cnetmod::cnetmod_core)
+add_custom_target(cnetboot_architecture_gate ALL
+    COMMAND $<TARGET_FILE:cnetboot_framework_layering_boundaries_test>
+    DEPENDS cnetboot_framework_layering_boundaries_test
+    WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
+    COMMENT "Running mandatory cnetBoot architecture gate"
+    VERBATIM
+    USES_TERMINAL)
+
 if(BUILD_TESTING)
     add_executable(cnetboot_request_principal_test testing/request_principal.cpp)
     target_link_libraries(cnetboot_request_principal_test PRIVATE cnetboot::security)
@@ -235,7 +247,6 @@ if(BUILD_TESTING)
         framework_query
         framework_error_registry
         framework_error_contract
-        framework_layering_boundaries
         framework_pagination
         framework_route_contract
         framework_jwt
@@ -253,7 +264,6 @@ if(BUILD_TESTING)
     target_link_libraries(cnetboot_framework_error_registry_test PRIVATE cnetboot::framework_web)
     target_link_libraries(cnetboot_framework_error_contract_test PRIVATE
         cnetmod::cnetmod_core cnetboot::framework_error)
-    target_link_libraries(cnetboot_framework_layering_boundaries_test PRIVATE cnetmod::cnetmod_core)
     target_link_libraries(cnetboot_framework_pagination_test PRIVATE cnetboot::framework_core)
     target_link_libraries(cnetboot_framework_route_contract_test PRIVATE
         cnetmod::cnetmod_core cnetboot::web cnetboot::ai cnetboot::chat_web)
@@ -276,6 +286,8 @@ if(BUILD_TESTING)
 
     set_tests_properties(cnetboot_framework_error_contract PROPERTIES
         WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}")
+    add_test(NAME cnetboot_framework_layering_boundaries
+        COMMAND cnetboot_framework_layering_boundaries_test)
     set_tests_properties(cnetboot_framework_layering_boundaries PROPERTIES
         WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}")
     set_tests_properties(cnetboot_identity_sessions PROPERTIES SKIP_RETURN_CODE 77)
