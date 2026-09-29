@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mapper namespace="SystemUserMapper">
+    <sql id="visibility">
+        u.deleted = 0
+        <if test="userName != ''">
+            AND u.user_name LIKE CONCAT('%', #{userName}, '%')
+        </if>
+    </sql>
+
+    <select id="countPage" parameterType="map" resultType="user_count_row"
+            logicalDelete="false">
+        SELECT COUNT(*) AS total
+        FROM sys_user u
+        WHERE <include refid="visibility"/>
+    </select>
+
+    <select id="findPage" parameterType="map" resultType="user_list_row"
+            logicalDelete="false">
+        SELECT u.user_id,
+               u.dept_id,
+               u.user_name,
+               u.nick_name,
+               u.email,
+               u.status,
+               COALESCE(d.dept_name, '') AS dept_name
+        FROM sys_user u
+        LEFT JOIN sys_dept d
+          ON d.dept_id = u.dept_id AND d.deleted = 0
+        WHERE <include refid="visibility"/>
+        ORDER BY u.user_id DESC
+        LIMIT #{limit} OFFSET #{offset}
+    </select>
+</mapper>

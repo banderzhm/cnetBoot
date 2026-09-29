@@ -1,0 +1,244 @@
+# 错误码唯一注册表（人工维护）。
+# 任何改动都必须同步 backend/framework/error/error_code.cpp 的 k_registry，
+# 并由 framework_error_contract CTest 用例校验一致。
+errors:
+  - code: SYSTEM.OK
+    httpStatus: 200
+    defaultMessage: 成功
+    owner: platform
+    category: system
+    retryable: false
+    exposable: true
+    deprecated: false
+  - code: REQUEST.INVALID_ARGUMENT
+    httpStatus: 400
+    defaultMessage: 请求参数不合法
+    owner: platform
+    category: request
+    retryable: false
+    exposable: true
+    deprecated: false
+  - code: ALGORITHM.NOT_SUPPORTED
+    httpStatus: 404
+    defaultMessage: 请求的算法不在支持清单内
+    owner: platform
+    category: algorithm
+    retryable: false
+    exposable: true
+    deprecated: false
+  - code: ALGORITHM.FAILED
+    httpStatus: 422
+    defaultMessage: 算法无法处理当前输入
+    owner: platform
+    category: algorithm
+    retryable: false
+    exposable: true
+    deprecated: false
+  - code: BAZI.CHART_UNAVAILABLE
+    httpStatus: 503
+    defaultMessage: 命盘暂不可用，请稍后重试
+    owner: bazi
+    category: dependency
+    retryable: true
+    exposable: true
+    deprecated: false
+  - code: ARCHIVE.NOT_FOUND
+    httpStatus: 404
+    defaultMessage: 快照不存在或已过期
+    owner: platform
+    category: request
+    retryable: false
+    exposable: true
+    deprecated: false
+  - code: DEPENDENCY.UNAVAILABLE
+    httpStatus: 503
+    defaultMessage: 上游依赖暂不可用，请稍后重试
+    owner: platform
+    category: dependency
+    retryable: true
+    exposable: true
+    deprecated: false
+  - code: AUTH.INVALID_CREDENTIALS
+    httpStatus: 401
+    defaultMessage: 账号或密码错误
+    owner: identity
+    category: authentication
+    retryable: false
+    exposable: true
+    deprecated: false
+  - code: AUTH.TOKEN_MISSING
+    httpStatus: 401
+    defaultMessage: 缺少访问令牌
+    owner: identity
+    category: authentication
+    retryable: false
+    exposable: true
+    deprecated: false
+  - code: AUTH.TOKEN_INVALID
+    httpStatus: 401
+    defaultMessage: 访问令牌无效
+    owner: identity
+    category: authentication
+    retryable: false
+    exposable: true
+    deprecated: false
+  - code: AUTH.TOKEN_EXPIRED
+    httpStatus: 401
+    defaultMessage: 访问令牌已过期，请重新登录
+    owner: identity
+    category: authentication
+    retryable: false
+    exposable: true
+    deprecated: false
+  - code: AUTH.FORBIDDEN
+    httpStatus: 403
+    defaultMessage: 没有执行该操作的权限
+    owner: identity
+    category: authorization
+    retryable: false
+    exposable: true
+    deprecated: false
+  - code: AUTH.ACCOUNT_LOCKED
+    httpStatus: 423
+    defaultMessage: 账号已被临时锁定，请稍后重试
+    owner: identity
+    category: authentication
+    retryable: true
+    exposable: true
+    deprecated: false
+  - code: AUTH.ACCOUNT_DISABLED
+    httpStatus: 403
+    defaultMessage: 账号已被停用
+    owner: identity
+    category: authentication
+    retryable: false
+    exposable: true
+    deprecated: false
+  - code: USER.NOT_FOUND
+    httpStatus: 404
+    defaultMessage: 用户不存在
+    owner: identity
+    category: request
+    retryable: false
+    exposable: true
+    deprecated: false
+  - code: USER.CONFLICT
+    httpStatus: 409
+    defaultMessage: 用户已存在或状态冲突
+    owner: identity
+    category: request
+    retryable: false
+    exposable: true
+    deprecated: false
+  - code: ROLE.NOT_FOUND
+    httpStatus: 404
+    defaultMessage: 角色不存在
+    owner: identity
+    category: request
+    retryable: false
+    exposable: true
+    deprecated: false
+  - code: ROLE.CONFLICT
+    httpStatus: 409
+    defaultMessage: 角色编码已存在或状态冲突
+    owner: identity
+    category: request
+    retryable: false
+    exposable: true
+    deprecated: false
+  - code: PERMISSION.NOT_FOUND
+    httpStatus: 404
+    defaultMessage: 权限不存在
+    owner: identity
+    category: request
+    retryable: false
+    exposable: true
+    deprecated: false
+  - code: SETTING.NOT_FOUND
+    httpStatus: 404
+    defaultMessage: 系统设置不存在
+    owner: identity
+    category: request
+    retryable: false
+    exposable: true
+    deprecated: false
+  - code: REQUEST.METHOD_NOT_ALLOWED
+    httpStatus: 405
+    defaultMessage: 该资源不支持此请求方法
+    owner: platform
+    category: request
+    retryable: false
+    exposable: true
+    deprecated: false
+  - code: CASE.NOT_FOUND
+    httpStatus: 404
+    defaultMessage: 案例不存在
+    owner: platform
+    category: request
+    retryable: false
+    exposable: true
+    deprecated: false
+  - code: TAG.NOT_FOUND
+    httpStatus: 404
+    defaultMessage: 标签不存在
+    owner: platform
+    category: request
+    retryable: false
+    exposable: true
+    deprecated: false
+  - code: TAG.CONFLICT
+    httpStatus: 409
+    defaultMessage: 标签名已存在
+    owner: platform
+    category: request
+    retryable: false
+    exposable: true
+    deprecated: false
+  - code: CHAT.SESSION_NOT_FOUND
+    httpStatus: 404
+    defaultMessage: 会话不存在
+    owner: chat
+    category: request
+    retryable: false
+    exposable: true
+    deprecated: false
+  - code: DEPARTMENT.NOT_FOUND
+    httpStatus: 404
+    defaultMessage: 部门不存在
+    owner: identity
+    category: request
+    retryable: false
+    exposable: true
+    deprecated: false
+  - code: DEPARTMENT.CONFLICT
+    httpStatus: 409
+    defaultMessage: 部门仍有下级或成员，或层级关系冲突
+    owner: identity
+    category: request
+    retryable: false
+    exposable: true
+    deprecated: false
+  - code: REQUEST.RATE_LIMITED
+    httpStatus: 429
+    defaultMessage: 请求过于频繁，请稍后重试
+    owner: platform
+    category: request
+    retryable: true
+    exposable: true
+    deprecated: false
+  - code: REQUEST.NOT_FOUND
+    httpStatus: 404
+    defaultMessage: 请求的资源路径不存在
+    owner: platform
+    category: request
+    retryable: false
+    exposable: true
+    deprecated: false
+  - code: SYSTEM.INTERNAL_ERROR
+    httpStatus: 500
+    defaultMessage: 系统内部错误
+    owner: platform
+    category: system
+    retryable: false
+    exposable: false
+    deprecated: false

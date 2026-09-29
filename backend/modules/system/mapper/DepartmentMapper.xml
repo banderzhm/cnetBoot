@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mapper namespace="SystemDepartmentMapper">
+    <select id="findVisible" parameterType="map" resultType="sys_dept"
+            logicalDelete="false">
+        SELECT d.*
+        FROM sys_dept d
+        WHERE d.deleted = 0
+          AND d.status = 0
+          AND d.dept_id IN
+          <foreach collection="departmentIds" item="department"
+                   open="(" close=")" separator=",">
+              #{department.value}
+          </foreach>
+        ORDER BY d.parent_id, d.order_num, d.dept_id
+    </select>
+
+    <select id="findSubtree" parameterType="map" resultType="sys_dept"
+            logicalDelete="false">
+        WITH RECURSIVE subtree AS (
+            SELECT d.*
+            FROM sys_dept d
+            WHERE d.dept_id = #{departmentId}
+              AND d.deleted = 0 AND d.status = 0
+            UNION ALL
+            SELECT child.*
+            FROM sys_dept child
+            INNER JOIN subtree parent ON child.parent_id = parent.dept_id
+            WHERE child.deleted = 0 AND child.status = 0
+        )
+        SELECT * FROM subtree
+    </select>
+</mapper>

@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ChatMapper —— 多轮对话（会话 / 消息）的 SQL。
+
+  这里只保留主键投影探针与事务中的原子计数/批量软删语句；普通插入由 ORM 实体完成。
+  与 backend/modules/chat/mapper/chat_mapper.cpp 的实际调用点一一对应：
+  - selectSession              存在性探针：追加消息前在同一个事务里校验会话未逻辑删除（只选主键）；
+  - touchSession               会话计数/最后消息时间维护（message_count = message_count + 1）；
+  - softDeleteSession          会话逻辑删除（deleted_at + updated_at）；
+  - softDeleteSessionMessages  会话级多行逻辑删除。
+
+  会话列表 / 消息列表 / 计数 / 选择性更新已全部走 ORM query_wrapper，对应的旧语句
+  （selectSessions / countSessions / updateSession / selectMessages / countMessages /
+  selectRecentMessages）不再保留 —— 不给测试留死 SQL。
+
+  时间口径：DATETIME 列存 **UTC 墙钟**。映射器在边界把 unix 秒换算成 calendar_datetime
+  （#{created_time} / #{updated_time} / #{created_at}）直接绑定，SQL 里不出现
+  FROM_UNIXTIME / UNIX_TIMESTAMP / NOW() 这类按会话时区解释的函数。
+-->
+<mapper namespace="ChatMapper">
+
+  <sql id="sessionFilters">
+    <if test="session_id != null and session_id &gt; 0">
+      s.id = #{session_id}
+    </if>
+    <if test="algorithm != null and algorithm != ''">
+      AND s.algorithm = #{algorithm}
+    </if>
+  </sql>
+
+  <!-- 存在性探针：调用方只看 rows 是否为空，因此不选时间列。 -->
+  <select id="selectSession">
+    SELECT s.id
+    FROM chat_session s
+    <where>
+      <include refid="sessionFilters"/>
+    </where>
+    LIMIT 1
+  </select>
+
+  <update id="touchSession" logicalDelete="false">
+    UPDATE chat_session
+    SET message_count = message_count + 1, last_message_at = #{created_time}, updated_at = #{created_time}
+    WHERE id = #{session_id} AND deleted_at IS NULL
+  </update>
+
+  <update id="softDeleteSession" logicalDelete="false">
+    UPDATE chat_session
+    SET deleted_at = #{updated_time}, updated_at = #{updated_time}
+    WHERE id = #{session_id} AND deleted_at IS NULL
+  </update>
+
+  <update id="softDeleteSessionMessages" logicalDelete="false">
+    UPDATE chat_message
+    SET deleted_at = #{updated_time}
+    WHERE session_id = #{session_id} AND deleted_at IS NULL
+  </update>
+
+</mapper>

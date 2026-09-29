@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mapper namespace="SystemRoleMapper">
+    <select id="findByUserId" parameterType="map" resultType="sys_role"
+            logicalDelete="false">
+        SELECT r.*
+        FROM sys_role r
+        INNER JOIN sys_user_role ur ON ur.role_id = r.role_id
+        WHERE ur.user_id = #{userId}
+          AND r.status = 0
+          AND r.deleted = 0
+        ORDER BY r.role_sort, r.role_id
+    </select>
+
+    <select id="findUserIds" parameterType="map" resultType="role_user_id">
+        SELECT ur.user_id
+        FROM sys_user_role ur
+        WHERE ur.role_id = #{roleId}
+        ORDER BY ur.user_id
+    </select>
+</mapper>

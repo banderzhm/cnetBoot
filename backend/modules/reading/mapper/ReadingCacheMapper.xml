@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ReadingCacheMapper —— 断语缓存（reading_cache）的两条写路径 SQL。
+  约定（与 ChatMapper.xml 一致）：
+  - 读路径走 ORM query_wrapper（列清单由 reading_cache_record 模型生成），这里只有 UPSERT 与命中计数；
+  - 时间列收 UTC 墙钟（C++ 侧从 unix 秒换算后以 DATETIME 参数绑定，不依赖会话时区）；
+  - 唯一键是 (user_id, algorithm, chart_fingerprint, question_hash)，与建表的唯一键逐列一致；
+  - 回填用 INSERT ... ON DUPLICATE KEY UPDATE（单语句原子，后写覆盖先写）；
+  - 命中计数用单语句自增，不做「先读后写」。
+-->
+<mapper namespace="ReadingCacheMapper">
+
+  <insert id="upsert">
+    INSERT INTO reading_cache (user_id, algorithm, chart_fingerprint, question_hash, question, content, model,
+      tokens_in, tokens_out, engine_version, hit_count, created_at, updated_at)
+    VALUES (#{user_id}, #{algorithm}, #{chart_fingerprint}, #{question_hash}, #{question}, #{content}, #{model},
+      #{tokens_in}, #{tokens_out}, #{engine_version}, 0, #{now_at}, #{now_at})
+    ON DUPLICATE KEY UPDATE question = VALUES(question), content = VALUES(content), model = VALUES(model),
+      tokens_in = VALUES(tokens_in), tokens_out = VALUES(tokens_out), engine_version = VALUES(engine_version),
+      updated_at = VALUES(updated_at)
+  </insert>
+
+  <update id="recordHit">
+    UPDATE reading_cache
+    SET hit_count = hit_count + 1, last_hit_at = #{now_at}
+    WHERE user_id = #{user_id}
+      AND algorithm = #{algorithm}
+      AND chart_fingerprint = #{chart_fingerprint}
+      AND question_hash = #{question_hash}
+  </update>
+
+</mapper>

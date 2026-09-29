@@ -1,0 +1,9 @@
+backend/build/
+.idea/
+.vscode/
+crash/
+
+# Out-of-tree build and scratch trees created by local tooling. They hold
+# object files and probe projects that must never reach the repository.
+build*/
+.dsh-tmp/
