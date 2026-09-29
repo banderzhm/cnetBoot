@@ -53,10 +53,21 @@ auto main() -> int
     if (std::filesystem::exists(repository_instructions))
     {
         const auto instructions = read_text(repository_instructions);
-        expect.require(instructions.contains("E:\\github\\cnetmod\\AGENTS.md") &&
+        expect.require(instructions.contains("3rdparty/cnetmod/AGENTS.md") &&
                 instructions.contains("完整读取最新"),
             "AI instructions must require reading the latest cnetmod AGENTS.md in full");
+        expect.require(instructions.contains("wsl_clang_3rdparty_build.sh") &&
+                instructions.contains("windows_3rdparty_build.ps1"),
+            "build instructions must require prebuilding cnetmod before the backend");
     }
+
+    const auto repository_root = root.parent_path();
+    expect.require(std::filesystem::exists(repository_root / "3rdparty/cnetmod/AGENTS.md"),
+        "cnetmod must be available as the repository-local 3rdparty submodule");
+    for (const auto script : {"windows_3rdparty_build.ps1", "windows_build.ps1",
+             "wsl_clang_3rdparty_build.sh", "wsl_clang_build.sh"})
+        expect.require(std::filesystem::exists(repository_root / "script" / script),
+            std::format("required build script is missing: {}", script));
 
     const std::set<std::string> allowed_modules{"ai", "chat", "system"};
     for (const auto& entry : std::filesystem::directory_iterator{modules})

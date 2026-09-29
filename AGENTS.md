@@ -9,11 +9,9 @@ cnetmod 的 API、协程、ORM、Redis、HTTP、SSE、安全、AI、模块与构
 如果执行者是 AI Agent，开始搜索、分析、设计、修改或生成代码之前，必须依次完成：
 
 1. 完整读取本文件。
-2. 定位 cnetmod 源码仓库。当前标准工作区布局为：
-   - cnetBoot：`E:\github\cnetBoot`
-   - cnetmod：`E:\github\cnetmod`
-   - 从 cnetBoot 仓库使用相对路径时为 `..\cnetmod\AGENTS.md`。
-3. **完整读取最新的 `E:\github\cnetmod\AGENTS.md`，不得只读取摘要、节选或凭旧上下文回忆。**
+2. 确认仓库内的 cnetmod Git submodule 已初始化：源码固定在
+   `3rdparty/cnetmod/`，不得引用工作区外的兄弟目录或个人机器绝对路径。
+3. **完整读取最新的 `3rdparty/cnetmod/AGENTS.md`，不得只读取摘要、节选或凭旧上下文回忆。**
 4. 根据任务类型，再读取 cnetmod `AGENTS.md` 中列出的对应 `skill/**/*.md` 源文件。例如：
    - Application、组件注册、多事件循环：`skill/infra/application.md`
    - 架构、模块、接口实现分离：`skill/infra/architecture.md`、
@@ -27,7 +25,9 @@ cnetmod 的 API、协程、ORM、Redis、HTTP、SSE、安全、AI、模块与构
      `skill/coro/executor-bridge.md`、`skill/coro/timer-retry.md`
 5. 检查实际安装或引用的 cnetmod 版本与源码分支，不能因为“API 看起来相似”而猜签名。
 
-若 cnetmod 仓库或其 `AGENTS.md` 不存在，AI 必须明确报告缺失事实；不得自行补造 cnetmod API、
+若 `3rdparty/cnetmod` 或其 `AGENTS.md` 不存在，先执行
+`git submodule update --init --recursive --depth 1`。
+仍然缺失时，AI 必须明确报告缺失事实；不得自行补造 cnetmod API、
 复制旧实现或在 cnetBoot 内重造一套框架能力。若本文件与 cnetmod 规则冲突：
 
 - cnetmod API、安全、并发、模块和底层能力由 cnetmod `AGENTS.md` 决定；
@@ -220,8 +220,10 @@ AI 每次修改应按以下顺序工作：
 3. 检查工作区状态，保留用户已有改动，不覆盖不相关文件。
 4. 先确认 cnetmod 是否已有能力，再确定修改属于 framework、业务模块还是 bootstrap。
 5. 同步修改接口、实现、CMake、配置、迁移、契约、测试和文档，不能只修一层。
-6. 运行格式/静态门禁、完整构建和测试；构建失败不得提交。
-7. 提交前运行 `git diff --check`，确认没有生成物、密钥、绝对个人路径或垂直业务泄漏。
+6. 首次构建或 cnetmod 版本变化后，必须先运行当前平台的 3rdparty 脚本构建并安装 cnetmod，
+   再运行 backend 构建脚本；不得直接把 cnetmod 源码目录塞进 `CMAKE_PREFIX_PATH`。
+7. 运行格式/静态门禁、完整构建和测试；构建失败不得提交。
+8. 提交前运行 `git diff --check`，确认没有生成物、密钥、绝对个人路径或垂直业务泄漏。
 
 ## 13. 强制门禁与验证
 
@@ -235,18 +237,26 @@ AI 每次修改应按以下顺序工作：
 - AI provider 类型越过 `ai/service/model` 边界；
 - system/chat 的 DTO 目录或 AI model 边界被删除。
 
-最低验收命令（路径按实际 cnetmod 安装调整）：
+标准构建顺序如下。脚本使用 cnetmod 自带 3rdparty 源码构建依赖，不允许使用 vcpkg，且 backend
+只能消费安装后的 CMake package：
 
 ```bash
-cmake -S backend -B backend/build-clang -G Ninja \
-  -DCMAKE_CXX_COMPILER=clang++ \
-  -DCMAKE_PREFIX_PATH=/path/to/cnetmod/install \
-  -Dyaml_cpp_modules_DIR=/path/to/yaml_cpp_modules/lib/cmake/yaml_cpp_modules \
-  -DCMAKE_BUILD_TYPE=Release
-cmake --build backend/build-clang -j2
+# WSL / Clang
+./script/wsl_clang_3rdparty_build.sh
+CNETBOOT_BUILD_TESTING=ON ./script/wsl_clang_build.sh
 ctest --test-dir backend/build-clang --output-on-failure -j2
+
+# Windows / MSVC（PowerShell）
+.\script\windows_3rdparty_build.ps1
+.\script\windows_build.ps1 -BuildTests
+ctest --test-dir backend/build-windows -C Release --output-on-failure
+
 git diff --check
 ```
+
+`windows_build.ps1` 与 `wsl_clang_build.sh` 必须在安装包缺失时立即失败，并明确提示先运行对应的
+3rdparty 脚本。安装目录固定为 `3rdparty/windows/` 与 `3rdparty/wsl-clang/`；构建目录和安装目录
+都不得提交。
 
 涉及 MySQL、Redis、租户/数据权限或故障降级时，不能只跑纯内存测试：必须启用对应真实服务测试，
 覆盖正常、不可达、超时、并发、撤销、逻辑删除、跨租户和上下级边界。测试因环境缺失而 Skip 必须
@@ -255,6 +265,8 @@ git diff --check
 ## 14. 提交前清单
 
 - [ ] AI 已完整读取最新 cnetmod `AGENTS.md` 和相关 skill。
+- [ ] cnetmod 来自 `3rdparty/cnetmod` submodule，没有引用仓库外绝对路径。
+- [ ] 已先运行当前平台的 3rdparty 预构建脚本，再构建 backend。
 - [ ] 没有重造 cnetmod 已有能力。
 - [ ] 没有垂直业务语义污染 cnetBoot。
 - [ ] DTO、domain record、mapper、service、controller 位置正确。

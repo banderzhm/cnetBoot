@@ -1,0 +1,3 @@
+[submodule "3rdparty/cnetmod"]
+	path = 3rdparty/cnetmod
+	url = https://github.com/banderzhm/cnetmod.git

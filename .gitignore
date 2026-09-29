@@ -7,3 +7,7 @@ crash/
 # object files and probe projects that must never reach the repository.
 build*/
 .dsh-tmp/
+3rdparty/build-windows/
+3rdparty/build-wsl-clang/
+3rdparty/windows/
+3rdparty/wsl-clang/

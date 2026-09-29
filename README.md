@@ -23,6 +23,9 @@ backend/
     chat/           通用会话与消息业务
   migrations/       MySQL 迁移
   testing/          契约、分层和组件测试
+3rdparty/
+  cnetmod/          固定版本的 cnetmod Git submodule
+script/             Windows / WSL 的依赖预构建和 backend 构建入口
 ```
 
 业务模块采用 Spring 风格的同级分层：`controller/`、`dto/`、`service/`、`domain/`、
@@ -41,17 +44,42 @@ export CNETBOOT_JWT_SECRET='replace-with-at-least-32-characters'
 `backend/config/llm.providers.example.yaml`。模型能力由 `ai_module` 显式注册，不因
 出现配置文件或路由而隐式开启。
 
+## 获取依赖
+
+克隆时初始化 cnetmod submodule：
+
+```bash
+git clone --recurse-submodules --shallow-submodules <cnetBoot-repository-url>
+# 已经克隆仓库时：
+git submodule update --init --recursive --depth 1
+```
+
+cnetBoot 不读取工作区外的 cnetmod，也不使用 vcpkg。构建脚本从
+`3rdparty/cnetmod` 构建 cnetmod 自带的第三方依赖并安装为本仓库私有 CMake package。
+若 submodule 尚未完整初始化，3rdparty 脚本会先执行递归初始化。
+
 ## WSL / Clang 构建
 
 ```bash
-cmake -S backend -B backend/build -G Ninja \
-  -DCMAKE_CXX_COMPILER=clang++ \
-  -DCMAKE_PREFIX_PATH=/path/to/cnetmod/install \
-  -Dyaml_cpp_modules_DIR=/path/to/yaml_cpp_modules/lib/cmake/yaml_cpp_modules \
-  -DCMAKE_BUILD_TYPE=Release
-cmake --build backend/build -j2
-ctest --test-dir backend/build --output-on-failure
+./script/wsl_clang_3rdparty_build.sh
+CNETBOOT_BUILD_TESTING=ON ./script/wsl_clang_build.sh
+ctest --test-dir backend/build-clang --output-on-failure -j2
 ```
+
+第一条命令必须先执行；它把 cnetmod 安装到 `3rdparty/wsl-clang`。backend 脚本只使用这个
+安装包，缺失时会直接报错，不会隐式回退到其它 cnetmod。
+
+## Windows / MSVC 构建
+
+```powershell
+.\script\windows_3rdparty_build.ps1
+.\script\windows_build.ps1 -BuildTests
+ctest --test-dir backend/build-windows -C Release --output-on-failure
+```
+
+Windows 安装目录为 `3rdparty/windows`。默认限制 cnetmod 编译并行度为 1，避免 C++ Modules
+完整构建占用过多内存；可按机器容量传 `-Jobs` 调整。
+WSL 默认并行度为 2，可用 `CNETBOOT_JOBS` 显式调整。
 
 ## 扩展规则
 
