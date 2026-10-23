@@ -31,13 +31,15 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y wget ninja-build liburing-dev
-          wget -q https://apt.llvm.org/llvm.sh
-          chmod +x llvm.sh
-          sudo ./llvm.sh 23 all
+          llvm_installer="$RUNNER_TEMP/llvm.sh"
+          cmake_installer="$RUNNER_TEMP/cmake-4.1.2-linux-x86_64.sh"
+          wget -q https://apt.llvm.org/llvm.sh -O "$llvm_installer"
+          chmod +x "$llvm_installer"
+          sudo "$llvm_installer" 23 all
           sudo apt-get install -y libc++-23-dev libc++abi-23-dev
-          wget -q https://github.com/Kitware/CMake/releases/download/v4.1.2/cmake-4.1.2-linux-x86_64.sh
-          chmod +x cmake-4.1.2-linux-x86_64.sh
-          sudo ./cmake-4.1.2-linux-x86_64.sh --skip-license --prefix=/usr/local
+          wget -q https://github.com/Kitware/CMake/releases/download/v4.1.2/cmake-4.1.2-linux-x86_64.sh -O "$cmake_installer"
+          chmod +x "$cmake_installer"
+          sudo "$cmake_installer" --skip-license --prefix=/usr/local
 
       - name: Prebuild and install cnetmod
         shell: bash
