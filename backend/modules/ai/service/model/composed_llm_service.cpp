@@ -1,9 +1,4 @@
-/**
- * @brief composed_llm_service 的实现：目标解析 + 协议翻译 + 一次组合模型调用。
- *
- * 只有这里认识 cnetmod 的 ai::chat_request / ai::chat_response；上层用例只看到
- * llm_request / llm_completion。
- */
+
 module cnetboot.ai.service.model.composed_llm_service;
 
 import std;
@@ -23,7 +18,7 @@ namespace {
     using framework_error = cnetboot::framework::error::error_code;
     namespace config = cnetboot::framework::config;
 
-    /// @brief 把供应商无关的一条消息投影成 cnetmod 的消息（role 保持原样）。
+
     [[nodiscard]] auto to_ai_message(const llm_message& message) -> cnetmod::ai::message
     {
         if (message.role == "system")
@@ -38,7 +33,7 @@ namespace {
         return result;
     }
 
-    /// @brief 把一次 llm_request 投影成 cnetmod 的 chat_request：模型名只来自解析结果。
+
     [[nodiscard]] auto to_ai_request(const config::llm_target& target,
         const llm_request& request) -> cnetmod::ai::chat_request
     {
@@ -49,7 +44,7 @@ namespace {
         wire.messages.reserve(request.messages.size());
         for (const auto& message : request.messages)
             wire.messages.push_back(to_ai_message(message));
-        // 推理强度不是 OpenAI 的标准字段，但兼容网关普遍接受；空值不发送。
+
         if (!request.reasoning_effort.empty())
             wire.set_extra_text("reasoning_effort", request.reasoning_effort);
         return wire;
@@ -65,7 +60,7 @@ namespace {
         };
     }
 
-    /// @brief 所有 key 都失败后一律 ALGORITHM.FAILED；失败原文只记日志（不含提示词正文）。
+
     [[nodiscard]] auto failure(const config::llm_target& target,
         const std::string& detail) -> framework_error
     {
@@ -74,12 +69,7 @@ namespace {
         return framework_error::ai_request_failed;
     }
 
-    /**
-     * @brief 流式增量转发器：把 cnetmod 的 chunk 交给业务 sink，并记录下游断开。
-     *
-     * 下游断开时返回 false，cnetmod 的流随之停止读取上游；resilient 装饰器在首帧
-     * 之后不会重试，因此断开不会触发切 key。
-     */
+
     class delta_relay
     {
     public:
@@ -159,8 +149,8 @@ auto composed_llm_service::stream(const llm_request& request,
         to_ai_request(bound->target, request), delta_relay{sink});
     if (!response)
         co_return std::unexpected{failure(bound->target, response.error())};
-    // 客户端主动断开时上游返回「正常结束但内容被截断」，语义上仍算成功：
-    // 上层（SSE）靠 sink 的 false 自己收尾，这里把已生成的部分交回去。
+
+
     co_return completion_of(*response);
 }
 
@@ -177,7 +167,7 @@ void add_llm_models(cnetmod::application::component_collection& components,
     {
         auto instances = provider.enabled_instances();
         if (instances.empty())
-            continue; // 未启用的实例不会被 cnetmod 注册；该供应商按「未配置」处理
+            continue;
         cnetmod::application::add_chat_model(components,
             config::llm_model_component(provider.name),
             cnetmod::application::chat_model_composition{

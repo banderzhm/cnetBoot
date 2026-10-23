@@ -30,13 +30,36 @@ struct expectations
 {
     const auto extension = path.extension().string();
     return extension == ".cpp" || extension == ".cppm" || extension == ".xml" ||
-        extension == ".sql" || extension == ".yaml" || extension == ".md";
+        extension == ".sql" || extension == ".yaml" || extension == ".yml" ||
+        extension == ".md" || extension == ".ps1" || extension == ".sh";
 }
 
 [[nodiscard]] auto read_text(const std::filesystem::path& path) -> std::string
 {
     std::ifstream input{path, std::ios::binary};
     return {std::istreambuf_iterator<char>{input}, std::istreambuf_iterator<char>{}};
+}
+
+[[nodiscard]] auto is_cjk_lead(std::string_view text, std::size_t offset) noexcept -> bool
+{
+    const auto first = static_cast<unsigned char>(text[offset]);
+    if (first < 0xE3 || first > 0xE9 || offset + 2 >= text.size())
+        return false;
+    const auto second = static_cast<unsigned char>(text[offset + 1]);
+    const auto third = static_cast<unsigned char>(text[offset + 2]);
+    if ((second & 0xC0U) != 0x80U || (third & 0xC0U) != 0x80U)
+        return false;
+    const auto codepoint = ((first & 0x0FU) << 12U) |
+        ((second & 0x3FU) << 6U) | (third & 0x3FU);
+    return codepoint >= 0x3400U && codepoint <= 0x9FFFU;
+}
+
+[[nodiscard]] auto contains_cjk(std::string_view text) noexcept -> bool
+{
+    for (std::size_t index = 0; index < text.size(); ++index)
+        if (is_cjk_lead(text, index))
+            return true;
+    return false;
 }
 
 } // namespace
@@ -55,7 +78,7 @@ auto main() -> int
     {
         const auto instructions = read_text(repository_instructions);
         expect.require(instructions.contains("3rdparty/cnetmod/AGENTS.md") &&
-                instructions.contains("完整读取最新"),
+                instructions.contains("must read the latest"),
             "AI instructions must require reading the latest cnetmod AGENTS.md in full");
         expect.require(instructions.contains("wsl_clang_3rdparty_build.sh") &&
                 instructions.contains("windows_3rdparty_build.ps1"),
@@ -98,14 +121,24 @@ auto main() -> int
         std::string{"chart"} + "context",
         std::string{"cnet"} + "nexus"};
 
-    for (const auto& entry : std::filesystem::recursive_directory_iterator{root})
+    auto entries = std::filesystem::recursive_directory_iterator{repository_root};
+    const auto end = std::filesystem::recursive_directory_iterator{};
+    for (; entries != end; ++entries)
     {
+        const auto path = normalized(std::filesystem::relative(entries->path(), repository_root));
+        if (entries->is_directory() &&
+            (path == ".git" || path == "3rdparty" || path.starts_with("backend/build") ||
+                path.starts_with(".tmp-")))
+        {
+            entries.disable_recursion_pending();
+            continue;
+        }
+        const auto& entry = *entries;
         if (!entry.is_regular_file() || !source_file(entry.path()))
             continue;
-        const auto path = normalized(std::filesystem::relative(entry.path(), root));
-        if (path.starts_with("testing/") || path.starts_with("build/"))
-            continue;
         auto text = read_text(entry.path());
+        expect.require(!contains_cjk(text),
+            std::format("repository-owned text must be English-only: {}", path));
         std::ranges::transform(text, text.begin(), [](unsigned char ch)
         {
             return static_cast<char>(std::tolower(ch));
@@ -114,6 +147,8 @@ auto main() -> int
             expect.require(text.find(term) == std::string::npos,
                 std::format("vertical-business term '{}' leaked into {}", term, path));
 
+        if (path.find("backend/modules/") == std::string::npos)
+            continue;
         if (path.find("/controller/") != std::string::npos)
             expect.require(path.find("_dto.") == std::string::npos,
                 std::format("DTO must live in the sibling dto directory: {}", path));

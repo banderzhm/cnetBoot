@@ -38,7 +38,7 @@ namespace {
 
     using error_code = cnetboot::framework::error::error_code;
 
-    /// @brief cnetmod authorize() 的稳定失败码 -> 注册错误码。
+
     [[nodiscard]] auto code_for(std::string_view failure) noexcept -> error_code
     {
         if (failure == "FORBIDDEN")

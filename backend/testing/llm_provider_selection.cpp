@@ -1,22 +1,5 @@
-/**
- * @brief 多供应商 / 多模型 / 多 key 的离线验收用例（不连网、不需要运行中的 cnetmod 服务）。
- *
- * 覆盖五层：
- *  1. 小节结构校验 validate_llm_options：默认值可达、重复名/模型/key、退避参数；
- *  2. key 解析 resolve_llm_directory：未知服务、非 openai、空 api_key、pool_size 越界、
- *     未启用实例；
- *  3. 目标解析 resolve_llm_target：默认值回退、未知 provider/model 拒绝、未配置；
- *  4. composed_llm_service：协议翻译（模型名、推理强度）、按供应商路由、错误码映射、
- *     流式增量转发与客户端断开（用脚本化 framework_ai::chat_model 替身，不连网）；
- *  5. 脱敏目录 llm_catalog_json：只暴露供应商/模型/key 是否配置，绝不回显端点或密钥。
- *
- * 另有一段端到端配置用例：真读 YAML + ${ENV} 展开 + 顶层 llm 小节解码与解析
- * （临时文件与环境变量，仍然不联网）。
- *
- * 多 key 的轮询与失败切 key 由 cnetBoot 显式调用 cnetmod add_chat_model 开启；这里验证
- * 策略输入，cnetmod 测试负责验证“未显式声明时拒绝多实例组合”。
- */
-// setenv/_putenv_s 只经由 <cstdlib> 提供（import std 不带 C 头）。
+
+
 #include <cstdlib>
 
 import std;
@@ -43,7 +26,7 @@ namespace framework_ai = cnetmod::ai;
 using service_table =
     std::map<std::string, cnetmod::application::configured_service, std::less<>>;
 
-/// @brief 记录失败的检查点名；全部通过才返回 0。
+
 class checklist
 {
 public:
@@ -81,7 +64,7 @@ private:
     return service;
 }
 
-/// @brief 基准服务表：openai 两条 key；deepseek 一条未启用的 key。
+
 [[nodiscard]] auto services_fixture() -> service_table
 {
     service_table services;
@@ -91,7 +74,7 @@ private:
     return services;
 }
 
-/// @brief 基准小节：openai 两条 key 两个模型；deepseek 一条 key 一个模型。
+
 [[nodiscard]] auto options_fixture() -> config::llm_options
 {
     config::llm_options options;
@@ -115,14 +98,12 @@ private:
     return !result && result.error().contains(fragment);
 }
 
-/**
- * @brief 脚本化的组合模型替身：记录收到的请求，按脚本成功、失败或流式下发。
- */
+
 class scripted_model final : public framework_ai::chat_model
 {
 public:
     std::optional<std::string> failure;
-    std::vector<std::string> deltas{"第一段", "第二段"};
+    std::vector<std::string> deltas{"first segment", "second segment"};
     std::vector<framework_ai::chat_request> requests;
     std::size_t delivered{};
 
@@ -179,8 +160,8 @@ private:
     -> app_ai::llm_request
 {
     return app_ai::llm_request{
-        .messages = {{.role = "system", .content = "规则"},
-            {.role = "user", .content = "问题"}},
+        .messages = {{.role = "system", .content = "rules"},
+            {.role = "user", .content = "question"}},
         .provider = std::move(provider),
         .model = std::move(model),
         .reasoning_effort = "low",
@@ -197,7 +178,7 @@ void check_options_validation(checklist& expect)
     auto defaults_without_providers = config::llm_options{};
     defaults_without_providers.default_provider = "openai";
     expect.check(rejected_with(config::validate_llm_options(defaults_without_providers),
-                     "providers 为空"),
+                     "providers is empty"),
         "defaults without providers are rejected");
 
     auto missing_default = options_fixture();
@@ -221,17 +202,17 @@ void check_options_validation(checklist& expect)
     auto duplicate_provider = options_fixture();
     duplicate_provider.providers[1].name = "openai";
     duplicate_provider.providers[1].keys = {{.service = "other"}};
-    expect.check(rejected_with(config::validate_llm_options(duplicate_provider), "重复"),
+    expect.check(rejected_with(config::validate_llm_options(duplicate_provider), "duplicate"),
         "duplicate provider names are rejected");
 
     auto duplicate_model = options_fixture();
     duplicate_model.providers[0].models.push_back("gpt-4o");
-    expect.check(rejected_with(config::validate_llm_options(duplicate_model), "重复"),
+    expect.check(rejected_with(config::validate_llm_options(duplicate_model), "duplicate"),
         "duplicate models are rejected");
 
     auto duplicate_alias = options_fixture();
     duplicate_alias.providers[0].keys[1].name = "primary";
-    expect.check(rejected_with(config::validate_llm_options(duplicate_alias), "重复"),
+    expect.check(rejected_with(config::validate_llm_options(duplicate_alias), "duplicate"),
         "duplicate key aliases are rejected");
 
     auto shared_instance = options_fixture();
@@ -258,7 +239,7 @@ void check_options_validation(checklist& expect)
 
     auto inverted_backoff = options_fixture();
     inverted_backoff.resilience.max_backoff_ms = 10;
-    expect.check(rejected_with(config::validate_llm_options(inverted_backoff), "退避"),
+    expect.check(rejected_with(config::validate_llm_options(inverted_backoff), "backoff"),
         "backoff ceiling below the initial backoff is rejected");
 }
 
@@ -292,13 +273,13 @@ void check_directory_resolution(checklist& expect)
     auto wrong_type = services;
     wrong_type.at("openai-primary").name = "redis";
     auto rejected_type = config::resolve_llm_directory(options_fixture(), wrong_type);
-    expect.check(!rejected_type && rejected_type.error().contains("type 必须是 openai"),
+    expect.check(!rejected_type && rejected_type.error().contains("type must be openai"),
         "non-openai service reference is rejected");
 
     auto empty_key = services;
     empty_key.at("openai-primary") = openai_service("alpha", "   ");
     auto rejected_key = config::resolve_llm_directory(options_fixture(), empty_key);
-    expect.check(!rejected_key && rejected_key.error().contains("api_key 不能为空"),
+    expect.check(!rejected_key && rejected_key.error().contains("api_key must not be empty"),
         "blank api_key is rejected at load time");
 
     auto disabled_without_key = services;
@@ -372,7 +353,7 @@ void check_composed_service(checklist& expect)
     expect.check(service.configured(), "service with a composed model is configured");
 
     auto completed = cnetmod::sync_wait(service.complete(request_for("", "")));
-    expect.check(completed && completed->content == "第一段第二段" &&
+    expect.check(completed && completed->content == "first segmentsecond segment" &&
             completed->tokens_in == 11 && completed->tokens_out == 7,
         "completion content and usage are translated back");
     expect.check(openai->requests.size() == 1 &&
@@ -408,8 +389,8 @@ void check_composed_service(checklist& expect)
         co_return true;
     };
     auto streamed = cnetmod::sync_wait(service.stream(request_for("", ""), collect));
-    expect.check(streamed && streamed->content == "第一段第二段" &&
-            received == std::vector<std::string>{"第一段", "第二段"},
+    expect.check(streamed && streamed->content == "first segmentsecond segment" &&
+            received == std::vector<std::string>{"first segment", "second segment"},
         "stream forwards every delta in order");
 
     std::vector<std::string> partial;
@@ -420,7 +401,7 @@ void check_composed_service(checklist& expect)
         co_return false;
     };
     auto truncated = cnetmod::sync_wait(service.stream(request_for("", ""), disconnect));
-    expect.check(truncated && truncated->content == "第一段" && partial.size() == 1 &&
+    expect.check(truncated && truncated->content == "first segment" && partial.size() == 1 &&
             openai->delivered == 1,
         "client disconnect stops the upstream stream and returns the partial text");
 
@@ -468,7 +449,7 @@ void set_variable(const char* name, const char* value)
 #endif
 }
 
-/// @brief 真读 YAML：顶层 llm 小节 -> llm_options -> 校验 -> 解析到服务实例。
+
 [[nodiscard]] auto load_directory(const std::filesystem::path& path)
     -> std::expected<config::llm_directory, std::string>
 {
@@ -536,7 +517,7 @@ void check_end_to_end_configuration(checklist& expect)
             "yaml keys resolve to instances and resilience takes its defaults");
     }
 
-    // 环境变量未注入：必须硬失败（不能把空 key 带进运行期）。
+
     const auto other = directory / "cnetboot_llm_settings_missing_env.yaml";
     {
         std::ofstream stream{other, std::ios::binary | std::ios::trunc};

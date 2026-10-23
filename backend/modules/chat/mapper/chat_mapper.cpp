@@ -16,7 +16,7 @@ namespace db_api = cnetmod::database;
 namespace orm_api = cnetmod::orm;
 using error_code = cnetboot::framework::error::error_code;
 
-// XML mapper 只保留主键投影探针与原子计数/批量软删语句。
+
 constexpr std::string_view select_session_statement{"ChatMapper.selectSession"};
 constexpr std::string_view touch_session_statement{"ChatMapper.touchSession"};
 constexpr std::string_view soft_delete_session_statement{"ChatMapper.softDeleteSession"};
@@ -117,7 +117,7 @@ mysql_chat_mapper::mysql_chat_mapper(
 auto mysql_chat_mapper::select_session(std::uint64_t id)
     -> cnetmod::task<std::expected<std::optional<chat_session>, error_code>>
 {
-    // 主键 + 逻辑删除 + LIMIT 1：query_wrapper（成员指针 -> 列名）-> 模型按列名映射。
+
     auto query = orm_api::query_wrapper<chat_session_record>{};
     query.eq(&chat_session_record::id, id).limit(1);
     auto found = co_await sessions_.list(query);
@@ -153,17 +153,18 @@ auto mysql_chat_mapper::find_session(std::uint64_t id)
 auto mysql_chat_mapper::update_session(const chat_session& value)
     -> cnetmod::task<std::expected<chat_session, error_code>>
 {
-    // 先确认存在再更新：MySQL 在「新值与旧值相同」时 affected_rows 也是 0，不能用它判存在。
+
     auto existing = co_await select_session(value.id);
     if (!existing)
         co_return std::unexpected{existing.error()};
     if (!existing->has_value())
         co_return std::unexpected{error_code::chat_session_not_found};
 
-    // 可写列的选择性更新走 update_wrapper（计数与创建时间不在 SET 里，由追加路径维护）。
+
     orm_api::update_wrapper<chat_session_record> update;
     update.set(&chat_session_record::title, value.title)
-        .set(&chat_session_record::system_prompt, value.system_prompt)
+        .set(&chat_session_record::system_prompt,
+            std::optional<std::string>{value.system_prompt})
         .set(&chat_session_record::model, value.model)
         .set(&chat_session_record::temperature, std::format("{:.2f}", value.temperature))
         .eq(&chat_session_record::id, value.id)
@@ -193,7 +194,7 @@ auto mysql_chat_mapper::remove_session(std::uint64_t id)
     if (removed.affected_rows == 0)
         co_return std::unexpected{error_code::chat_session_not_found};
 
-    // 消息清理：构建器表达不了「按 session_id 批量置 deleted_at」，仍在 XML 里。
+
     auto erased = co_await messages_.execute_xml(*registry_, soft_delete_messages_statement,
         parameters);
     if (!erased.ok())
@@ -206,7 +207,7 @@ auto mysql_chat_mapper::find_session_page(const chat_session_query& value)
 {
     const auto page = pagination::normalize(value.page);
 
-    // 过滤与排序由 query_wrapper 表达；计数与 LIMIT/OFFSET 交给仓储的 page()。
+
     auto filter = orm_api::query_wrapper<chat_session_record>{};
     if (!value.category.empty())
         filter.eq(&chat_session_record::category, value.category);
@@ -236,11 +237,11 @@ auto mysql_chat_mapper::append_message(const chat_message& value)
     std::uint64_t inserted_id = 0;
     bool session_missing = false;
 
-    // 原子性由仓储的单连接事务保证：插入消息 + 维护会话计数要么都生效、要么都回滚。
+
     auto outcome = co_await sessions_.transaction<std::expected<void, error_code>>(
         [&](auto& unit) -> cnetmod::task<std::expected<void, error_code>>
         {
-            // 会话必须存在且未逻辑删除：追加不会凭空建会话。
+
             orm_api::param_context probe;
             probe.set("session_id", value.session_id);
             auto session = co_await unit.template mapper<chat_session_record>().select_xml(
@@ -259,8 +260,8 @@ auto mysql_chat_mapper::append_message(const chat_message& value)
                 co_return std::unexpected{failure_of(written)};
             inserted_id = record.id;
 
-            // message_count = message_count + 1 与 last_message_at 在同一事务里维护，
-            // 避免会话列表出现「有消息但计数为 0」的中间态。
+
+
             orm_api::param_context touch;
             touch.set("session_id", value.session_id);
             touch.set("created_time", record.created_at);
@@ -291,7 +292,7 @@ auto mysql_chat_mapper::find_message_page(std::uint64_t session_id, const pagina
 {
     const auto normalized = pagination::normalize(page);
 
-    // 插入序 = 主键序：ORDER BY id ASC；计数与 LIMIT/OFFSET 交给仓储的 page()。
+
     auto filter = message_filter(session_id);
     filter.order_by_asc(&chat_message_record::id);
     auto paged = co_await messages_.page(static_cast<std::size_t>(normalized.page),
@@ -312,7 +313,7 @@ auto mysql_chat_mapper::find_message_page(std::uint64_t session_id, const pagina
 auto mysql_chat_mapper::find_recent_messages(std::uint64_t session_id, std::size_t limit)
     -> cnetmod::task<std::expected<std::vector<chat_message>, error_code>>
 {
-    // limit 0 = 不限：按时间正序读全部；有限值先按主键倒序取窗口，再反转成时间正序。
+
     auto window = message_filter(session_id);
     if (limit == 0)
         window.order_by_asc(&chat_message_record::id);
@@ -340,14 +341,14 @@ auto mysql_chat_mapper::find_recent_messages(std::uint64_t session_id, std::size
 auto validate_chat_mapper_registry(const cnetmod::orm::mapper_registry& registry)
     -> std::expected<void, std::string>
 {
-    // 启动期校验必需语句，避免运行到第一个请求才发现 XML 写错。列表 / 计数 / 选择性更新
-    // 已走 query_wrapper，这里只校验真正保留在 XML 里的语句。
+
+
     for (const auto statement : {select_session_statement,
              touch_session_statement,
              soft_delete_session_statement, soft_delete_messages_statement})
     {
         if (registry.find_statement(statement) == nullptr)
-            return std::unexpected{std::string{"chat mapper 缺少语句："} +
+            return std::unexpected{std::string{"chat mapper is missing statement: "} +
                 std::string{statement}};
     }
     return {};

@@ -1,8 +1,4 @@
-/**
- * @brief llm_settings 的实现：小节校验 + key 引用解析 + 请求目标解析。
- *
- * 配置文件由 cnetmod Application 加载与解码；本单元只做校验与纯逻辑解析。
- */
+
 module cnetboot.framework.config.llm_settings;
 
 import std;
@@ -24,7 +20,7 @@ namespace {
         return value.substr(begin, end - begin + 1);
     }
 
-    /// @brief key 别名：显式 name 优先，缺省取 service 名。
+
     [[nodiscard]] auto key_alias(const llm_key_options& key) -> std::string
     {
         return trimmed(key.name).empty() ? key.service : key.name;
@@ -35,50 +31,42 @@ namespace {
     {
         const auto path = std::format("providers[{}]", index);
         if (trimmed(provider.name).empty())
-            return std::unexpected{std::format("{}.name 不能为空", path)};
+            return std::unexpected{std::format("{}.name must not be empty", path)};
         if (provider.type != "openai")
             return std::unexpected{std::format(
-                "{}.type 必须是 openai（当前 {}）", path, provider.type)};
+                "{}.type must be openai (got {})", path, provider.type)};
         if (provider.models.empty())
             return std::unexpected{
-                std::format("{}.models 必须是至少含一个模型名的字符串数组", path)};
+                std::format("{}.models must contain at least one model name", path)};
         for (std::size_t model = 0; model < provider.models.size(); ++model)
         {
             if (trimmed(provider.models[model]).empty())
                 return std::unexpected{
-                    std::format("{}.models[{}] 不能为空", path, model)};
+                    std::format("{}.models[{}] must not be empty", path, model)};
             for (std::size_t other = model + 1; other < provider.models.size(); ++other)
                 if (provider.models[model] == provider.models[other])
-                    return std::unexpected{std::format("{}.models 的模型 {} 重复",
+                    return std::unexpected{std::format("{}.models contains duplicate model {}",
                         path, provider.models[model])};
         }
         if (provider.keys.empty())
             return std::unexpected{std::format(
-                "{}.keys 至少要一条（多 key = 多个 services 实例）", path)};
+                "{}.keys must contain at least one service-backed key", path)};
         for (std::size_t key = 0; key < provider.keys.size(); ++key)
         {
             if (trimmed(provider.keys[key].service).empty())
                 return std::unexpected{
-                    std::format("{}.keys[{}].service 不能为空", path, key)};
+                    std::format("{}.keys[{}].service must not be empty", path, key)};
             const auto alias = key_alias(provider.keys[key]);
             for (std::size_t other = key + 1; other < provider.keys.size(); ++other)
                 if (key_alias(provider.keys[other]) == alias)
                     return std::unexpected{std::format(
-                        "{}.keys[{}] 的 key 别名 {} 在同一供应商内重复", path, other,
+                        "{}.keys[{}] duplicates key alias {} within the provider", path, other,
                         alias)};
         }
         return {};
     }
 
-    /**
-     * @brief 校验一个 services.<name> 引用并解析成一条 key。
-     *
-     * 校验点（加载期失败，不带进运行期）：
-     *  - 服务条目存在且 type=openai（否则 cnetmod 不会注册 chat_model 服务）；
-     *  - instance 非空（add_chat_model 的实例名）；
-     *  - 仅对已启用实例：base_url 与 api_key 都是非空字符串（空 key 直接拒绝；
-     *    多 key = 多实例），pool_size 在 1..1024（与 cnetmod openai 集成一致）。
-     */
+
     [[nodiscard]] auto resolve_key(const service_table& services,
         const llm_key_options& key, std::string_view path)
         -> std::expected<llm_key, std::string>
@@ -86,50 +74,50 @@ namespace {
         const auto found = services.find(key.service);
         if (found == services.end())
             return std::unexpected{std::format(
-                "{} 引用的 services.{} 不存在", path, key.service)};
+                "{} references missing services.{}", path, key.service)};
         const auto& service = found->second;
         if (service.name != "openai")
             return std::unexpected{std::format(
-                "{} 引用的 services.{} 的 type 必须是 openai（当前 {}）", path,
+                "{} references services.{} whose type must be openai (got {})", path,
                 key.service, service.name)};
         if (service.instance.empty())
             return std::unexpected{
-                std::format("services.{}.instance 不能为空", key.service)};
+                std::format("services.{}.instance must not be empty", key.service)};
         llm_key resolved{
             .name = key_alias(key),
             .service = key.service,
             .instance = service.instance,
             .enabled = service.enabled,
         };
-        // 未启用的实例不会被 cnetmod 注册，也不会被调用：允许它的密钥为空（例如
-        // enabled: ${LLM_ENABLED:-false} + api_key: ${KEY:-} 的部署模板）。
+
+
         if (!service.enabled)
             return resolved;
         auto base_url = service.string_property("base_url");
         if (!base_url)
             return std::unexpected{
-                std::format("services.{}.base_url 必须是字符串", key.service)};
+                std::format("services.{}.base_url must be a string", key.service)};
         if (!base_url->has_value() || trimmed(**base_url).empty())
             return std::unexpected{
-                std::format("services.{}.base_url 不能为空", key.service)};
+                std::format("services.{}.base_url must not be empty", key.service)};
         auto api_key = service.string_property("api_key");
         if (!api_key)
             return std::unexpected{
-                std::format("services.{}.api_key 必须是字符串", key.service)};
+                std::format("services.{}.api_key must be a string", key.service)};
         if (!api_key->has_value() || trimmed(**api_key).empty())
             return std::unexpected{std::format(
-                "services.{}.api_key 不能为空（每个 key 一个 services 实例，"
-                "用 ${{VAR}} 环境变量占位符注入，禁止明文）",
+                "services.{}.api_key must not be empty; inject one key per service "
+                "instance through a ${{VAR}} environment placeholder",
                 key.service)};
         auto pool_size = service.integer_property("pool_size");
         if (!pool_size)
             return std::unexpected{
-                std::format("services.{}.pool_size 必须是整数", key.service)};
+                std::format("services.{}.pool_size must be an integer", key.service)};
         if (pool_size->has_value() &&
             (**pool_size < 1 ||
                 static_cast<std::size_t>(**pool_size) > llm_maximum_pool_size))
             return std::unexpected{std::format(
-                "services.{}.pool_size 必须在 1..{}（当前 {}）", key.service,
+                "services.{}.pool_size must be within 1..{} (got {})", key.service,
                 llm_maximum_pool_size, **pool_size)};
         return resolved;
     }
@@ -141,23 +129,23 @@ auto validate_llm_options(const llm_options& options)
 {
     if (options.resilience.attempts_per_key < 1)
         return std::unexpected{
-            std::string{"resilience.attempts_per_key 必须 >= 1"}};
+            std::string{"resilience.attempts_per_key must be >= 1"}};
     if (options.resilience.initial_backoff_ms < 0 ||
         options.resilience.max_backoff_ms < options.resilience.initial_backoff_ms)
         return std::unexpected{std::string{
-            "resilience 退避必须满足 0 <= initial_backoff_ms <= max_backoff_ms"}};
+            "resilience backoff must satisfy 0 <= initial_backoff_ms <= max_backoff_ms"}};
 
     if (options.providers.empty())
     {
         if (options.default_provider.empty() && options.default_model.empty())
             return {};
         return std::unexpected{std::string{
-            "default_provider/default_model 在 providers 为空时必须为空"}};
+            "default_provider and default_model must be empty when providers is empty"}};
     }
     if (trimmed(options.default_provider).empty())
-        return std::unexpected{std::string{"缺少必填配置项 default_provider"}};
+        return std::unexpected{std::string{"default_provider is required"}};
     if (trimmed(options.default_model).empty())
-        return std::unexpected{std::string{"缺少必填配置项 default_model"}};
+        return std::unexpected{std::string{"default_model is required"}};
 
     for (std::size_t index = 0; index < options.providers.size(); ++index)
         if (auto valid = validate_provider(options.providers[index], index); !valid)
@@ -167,26 +155,26 @@ auto validate_llm_options(const llm_options& options)
         for (std::size_t right = left + 1; right < options.providers.size(); ++right)
             if (options.providers[left].name == options.providers[right].name)
                 return std::unexpected{std::format(
-                    "providers 里的供应商名 {} 重复", options.providers[left].name)};
+                    "providers contains duplicate provider name {}", options.providers[left].name)};
 
-    // 一个 services 实例只能属于一条 key：否则两个供应商会共享同一连接池与熔断状态。
+
     std::set<std::string_view> referenced;
     for (const auto& provider : options.providers)
         for (const auto& key : provider.keys)
             if (!referenced.insert(key.service).second)
                 return std::unexpected{std::format(
-                    "services.{} 被多条 key 引用；一个 key 实例只能出现一次",
+                    "services.{} is referenced by multiple keys; each key service must be unique",
                     key.service)};
 
     const auto fallback = std::ranges::find(options.providers,
         options.default_provider, &llm_provider_options::name);
     if (fallback == options.providers.end())
         return std::unexpected{std::format(
-            "default_provider={} 不在 providers 清单里", options.default_provider)};
+            "default_provider={} is not present in providers", options.default_provider)};
     if (std::ranges::find(fallback->models, options.default_model) ==
         fallback->models.end())
         return std::unexpected{
-            std::format("default_model={} 不在供应商 {} 的 models 清单里",
+            std::format("default_model={} is not listed by provider {}",
                 options.default_model, fallback->name)};
     return {};
 }
@@ -261,7 +249,7 @@ auto resolve_llm_target(const llm_directory& directory, std::string_view provide
     if (found == nullptr)
         return std::unexpected{llm_rejected_code};
 
-    // 模型同理：空值回退 default_model，再校验它属于该供应商（配错清单直接拒绝）。
+
     const auto model_name =
         model.empty() ? std::string_view{directory.default_model} : model;
     if (model_name.empty())

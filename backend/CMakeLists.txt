@@ -8,10 +8,17 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_CXX_SCAN_FOR_MODULES ON)
 
+if(MSVC)
+    # cnetmod's ORM reflection macros require the conforming preprocessor.
+    # Keep the consumer contract explicit until the installed package exports
+    # the same option used while building cnetmod itself.
+    add_compile_options(/Zc:preprocessor /utf-8 /bigobj)
+endif()
+
 find_package(cnetmod 2 CONFIG REQUIRED)
 
 function(cnetboot_module name)
-    cmake_parse_arguments(ARG "" "" "SOURCES;MODULES;DEPENDS" ${ARGN})
+    cmake_parse_arguments(ARG "" "" "SOURCES;MODULES;CNETMOD;DEPENDS" ${ARGN})
     set(target "cnetboot_${name}")
     add_library(${target} STATIC ${ARG_SOURCES})
     add_library(cnetboot::${name} ALIAS ${target})
@@ -21,7 +28,11 @@ function(cnetboot_module name)
             BASE_DIRS "${CMAKE_CURRENT_SOURCE_DIR}"
             FILES ${ARG_MODULES})
     endif()
-    target_link_libraries(${target} PUBLIC cnetmod::cnetmod_core ${ARG_DEPENDS})
+    # runtime is the shared base component and also supplies the MSVC std
+    # module units to Ninja consumers. Protocol/application components remain
+    # explicit so a small library never pulls the all-components facade.
+    target_link_libraries(${target} PUBLIC
+        cnetmod::runtime ${ARG_CNETMOD} ${ARG_DEPENDS})
     set_target_properties(${target} PROPERTIES
         CXX_STANDARD 23
         CXX_STANDARD_REQUIRED ON
@@ -50,6 +61,7 @@ cnetboot_module(framework_web
         framework/web/route_handler.cppm
         framework/web/response.cppm
         framework/web/rate_limit.cppm
+    CNETMOD cnetmod::runtime cnetmod::http
     DEPENDS cnetboot::framework_error cnetboot::framework_core)
 
 cnetboot_module(framework_audit
@@ -58,11 +70,13 @@ cnetboot_module(framework_audit
         framework/audit/audit_log.cppm
         framework/audit/audit_record.cppm
         framework/audit/mysql_audit_log.cppm
+    CNETMOD cnetmod::runtime cnetmod::application cnetmod::orm
     DEPENDS cnetboot::framework_error)
 
 cnetboot_module(framework_config
     SOURCES framework/config/llm_settings.cpp
     MODULES framework/config/llm_settings.cppm
+    CNETMOD cnetmod::application
     DEPENDS cnetboot::framework_error)
 
 cnetboot_module(security
@@ -75,6 +89,12 @@ cnetboot_module(security
         framework/security/jwt_security.cppm
         framework/security/authorization.cppm
         framework/security/request_identity.cppm
+    CNETMOD
+        cnetmod::runtime
+        cnetmod::application
+        cnetmod::http
+        cnetmod::redis
+        cnetmod::orm
     DEPENDS
         cnetboot::framework_error
         cnetboot::framework_web
@@ -118,6 +138,11 @@ cnetboot_module(system
         modules/system/service/service_failure.cppm
         modules/system/service/login_guard.cppm
         modules/system/service/auth_service.cppm
+    CNETMOD
+        cnetmod::runtime
+        cnetmod::application
+        cnetmod::redis
+        cnetmod::orm
     DEPENDS
         cnetboot::framework_error
         cnetboot::framework_core
@@ -132,6 +157,9 @@ cnetboot_module(web
         modules/system/controller/auth_controller.cppm
         modules/system/controller/user_controller.cppm
         modules/system/controller/authorization_controller.cppm
+    CNETMOD
+        cnetmod::runtime
+        cnetmod::http
     DEPENDS
         cnetboot::security
         cnetboot::system
@@ -150,6 +178,11 @@ cnetboot_module(ai
         modules/ai/controller/llm_routes.cppm
         modules/ai/service/llm_catalog.cppm
         modules/ai/service/llm_service.cppm
+    CNETMOD
+        cnetmod::runtime
+        cnetmod::application
+        cnetmod::http
+        cnetmod::openai
     DEPENDS
         cnetboot::framework_error
         cnetboot::framework_config
@@ -167,6 +200,10 @@ cnetboot_module(chat
         modules/chat/mapper/chat_mapper.cppm
         modules/chat/service/chat_service.cppm
         modules/chat/service/chat_service_factory.cppm
+    CNETMOD
+        cnetmod::runtime
+        cnetmod::application
+        cnetmod::orm
     DEPENDS
         cnetboot::framework_error
         cnetboot::framework_core
@@ -183,6 +220,9 @@ cnetboot_module(chat_web
         modules/chat/dto/chat_dto.cppm
         modules/chat/controller/chat_route_context.cppm
         modules/chat/controller/chat_routes.cppm
+    CNETMOD
+        cnetmod::runtime
+        cnetmod::http
     DEPENDS
         cnetboot::chat
         cnetboot::framework_core
@@ -201,7 +241,13 @@ target_sources(cnetboot_server PRIVATE
     BASE_DIRS "${CMAKE_CURRENT_SOURCE_DIR}"
     FILES bootstrap/modules.cppm bootstrap/application.cppm)
 target_link_libraries(cnetboot_server PRIVATE
-    cnetmod::cnetmod_core
+    cnetmod::runtime
+    cnetmod::application
+    cnetmod::http
+    cnetmod::mysql
+    cnetmod::redis
+    cnetmod::orm
+    cnetmod::openai
     cnetboot::security
     cnetboot::system
     cnetboot::ai
@@ -220,7 +266,7 @@ configure_file(modules/chat/mapper/ChatMapper.xml mapper/ChatMapper.xml COPYONLY
 add_executable(cnetboot_framework_layering_boundaries_test
     testing/framework_layering_boundaries.cpp)
 target_link_libraries(cnetboot_framework_layering_boundaries_test PRIVATE
-    cnetmod::cnetmod_core)
+    cnetmod::runtime)
 add_custom_target(cnetboot_architecture_gate ALL
     COMMAND $<TARGET_FILE:cnetboot_framework_layering_boundaries_test>
     DEPENDS cnetboot_framework_layering_boundaries_test
@@ -231,16 +277,18 @@ add_custom_target(cnetboot_architecture_gate ALL
 
 if(BUILD_TESTING)
     add_executable(cnetboot_request_principal_test testing/request_principal.cpp)
-    target_link_libraries(cnetboot_request_principal_test PRIVATE cnetboot::security)
+    target_link_libraries(cnetboot_request_principal_test PRIVATE
+        cnetmod::runtime cnetmod::http cnetboot::security)
     add_test(NAME cnetboot_request_principal COMMAND cnetboot_request_principal_test)
 
     add_executable(cnetboot_system_mapper_test testing/system_mapper_registry.cpp)
-    target_link_libraries(cnetboot_system_mapper_test PRIVATE cnetmod::cnetmod_core)
+    target_link_libraries(cnetboot_system_mapper_test PRIVATE cnetmod::orm)
     add_test(NAME cnetboot_system_mapper_registry
         COMMAND cnetboot_system_mapper_test "${CMAKE_CURRENT_BINARY_DIR}/mapper")
 
     add_executable(cnetboot_authorization_snapshot_test testing/authorization_snapshot.cpp)
-    target_link_libraries(cnetboot_authorization_snapshot_test PRIVATE cnetboot::system)
+    target_link_libraries(cnetboot_authorization_snapshot_test PRIVATE
+        cnetmod::runtime cnetmod::orm cnetboot::system)
     add_test(NAME cnetboot_authorization_snapshot COMMAND cnetboot_authorization_snapshot_test)
 
     set(CNETBOOT_UNIT_TESTS
@@ -263,24 +311,26 @@ if(BUILD_TESTING)
     target_link_libraries(cnetboot_framework_query_test PRIVATE cnetboot::framework_web)
     target_link_libraries(cnetboot_framework_error_registry_test PRIVATE cnetboot::framework_web)
     target_link_libraries(cnetboot_framework_error_contract_test PRIVATE
-        cnetmod::cnetmod_core cnetboot::framework_error)
+        cnetmod::runtime cnetmod::application cnetboot::framework_error)
     target_link_libraries(cnetboot_framework_pagination_test PRIVATE cnetboot::framework_core)
     target_link_libraries(cnetboot_framework_route_contract_test PRIVATE
-        cnetmod::cnetmod_core cnetboot::web cnetboot::ai cnetboot::chat_web)
-    target_link_libraries(cnetboot_framework_jwt_test PRIVATE cnetmod::cnetmod_core)
+        cnetmod::runtime cnetmod::http cnetboot::web cnetboot::ai cnetboot::chat_web)
+    target_link_libraries(cnetboot_framework_jwt_test PRIVATE cnetmod::runtime)
     target_link_libraries(cnetboot_framework_sse_frames_test PRIVATE
-        cnetmod::cnetmod_core cnetboot::framework_web)
+        cnetmod::runtime cnetmod::http cnetboot::framework_web)
     target_link_libraries(cnetboot_framework_rate_limit_test PRIVATE
-        cnetmod::cnetmod_core cnetboot::framework_web)
+        cnetmod::runtime cnetmod::http cnetboot::framework_web)
     target_link_libraries(cnetboot_framework_typed_response_test PRIVATE
-        cnetmod::cnetmod_core cnetboot::framework_web)
+        cnetmod::runtime cnetmod::http cnetboot::framework_web)
     target_link_libraries(cnetboot_identity_sessions_test PRIVATE
-        cnetmod::cnetmod_core cnetboot::security cnetboot::system)
+        cnetmod::runtime cnetmod::redis cnetboot::security cnetboot::system)
     target_link_libraries(cnetboot_llm_provider_selection_test PRIVATE
-        cnetmod::cnetmod_core cnetboot::ai cnetboot::framework_config)
+        cnetmod::runtime cnetmod::application cnetmod::openai
+        cnetboot::ai cnetboot::framework_config)
 
     add_executable(cnetboot_chat_mapper_registry_test testing/chat_mapper_registry.cpp)
-    target_link_libraries(cnetboot_chat_mapper_registry_test PRIVATE cnetboot::chat)
+    target_link_libraries(cnetboot_chat_mapper_registry_test PRIVATE
+        cnetmod::orm cnetboot::chat)
     add_test(NAME cnetboot_chat_mapper_registry
         COMMAND cnetboot_chat_mapper_registry_test "${CMAKE_CURRENT_BINARY_DIR}/mapper")
 

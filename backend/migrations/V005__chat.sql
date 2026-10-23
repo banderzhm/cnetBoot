@@ -1,14 +1,14 @@
--- V005 —— 通用 AI 多轮对话、会话消息与 chat:* 权限码。
+
 --
--- 口径：
---   * 会话与消息都是逻辑删除（deleted_at），读取一律排除非空行；
---   * chat_message.session_id 建索引，会话消息分页与「最近 N 条」都走它；
---   * message_count / last_message_at 是会话上的冗余计数，由 mapper 在追加消息时维护；
---   * 权限码挂在 sys_menu.permission（本项目的菜单即权限模型），menu_type='F' 表示按钮；
---   * 幂等：CREATE TABLE IF NOT EXISTS + INSERT ... ON DUPLICATE KEY UPDATE。
+
+
+
+
+
+
 --
--- 时间口径：DATETIME(6) 一律存 UTC 墙钟；SQL 里不出现 NOW()、UNIX_TIMESTAMP 等按会话时区
--- 解释的函数，由应用在 mapper 边界写入 UTC 值。
+
+
 
 CREATE TABLE IF NOT EXISTS chat_session (
     id              BIGINT NOT NULL AUTO_INCREMENT,
@@ -46,27 +46,27 @@ CREATE TABLE IF NOT EXISTS chat_message (
     KEY ix_chat_message_created (created_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
--- chat:* 权限码。sys_menu 上没有 permission 唯一键，因此 ON DUPLICATE KEY
--- UPDATE 永不触发；改用 WHERE NOT EXISTS 守卫，保证迁移可重复执行而不堆积行。
--- menu_type='F' 表示按钮权限，visible=0 表示不进侧栏。
+
+
+
 INSERT INTO sys_menu (parent_id, menu_name, path, component, permission, menu_type, icon, order_num, visible, status)
-SELECT 0, '查询会话', '', '', 'chat:session:list', 'F', '', 1, 0, 0
+SELECT 0, 'List conversations', '', '', 'chat:session:list', 'F', '', 1, 0, 0
 WHERE NOT EXISTS (SELECT 1 FROM sys_menu WHERE permission = 'chat:session:list');
 
 INSERT INTO sys_menu (parent_id, menu_name, path, component, permission, menu_type, icon, order_num, visible, status)
-SELECT 0, '新建会话', '', '', 'chat:session:create', 'F', '', 2, 0, 0
+SELECT 0, 'Create conversation', '', '', 'chat:session:create', 'F', '', 2, 0, 0
 WHERE NOT EXISTS (SELECT 1 FROM sys_menu WHERE permission = 'chat:session:create');
 
 INSERT INTO sys_menu (parent_id, menu_name, path, component, permission, menu_type, icon, order_num, visible, status)
-SELECT 0, '修改会话', '', '', 'chat:session:update', 'F', '', 3, 0, 0
+SELECT 0, 'Update conversation', '', '', 'chat:session:update', 'F', '', 3, 0, 0
 WHERE NOT EXISTS (SELECT 1 FROM sys_menu WHERE permission = 'chat:session:update');
 
 INSERT INTO sys_menu (parent_id, menu_name, path, component, permission, menu_type, icon, order_num, visible, status)
-SELECT 0, '删除会话', '', '', 'chat:session:delete', 'F', '', 4, 0, 0
+SELECT 0, 'Delete conversation', '', '', 'chat:session:delete', 'F', '', 4, 0, 0
 WHERE NOT EXISTS (SELECT 1 FROM sys_menu WHERE permission = 'chat:session:delete');
 
 INSERT INTO sys_menu (parent_id, menu_name, path, component, permission, menu_type, icon, order_num, visible, status)
-SELECT 0, '发送消息', '', '', 'chat:message:send', 'F', '', 5, 0, 0
+SELECT 0, 'Send message', '', '', 'chat:message:send', 'F', '', 5, 0, 0
 WHERE NOT EXISTS (SELECT 1 FROM sys_menu WHERE permission = 'chat:message:send');
 
 INSERT IGNORE INTO sys_role_menu (role_id, menu_id)

@@ -1,10 +1,4 @@
-/**
- * @brief run() 的实现：配置 -> 模块 -> build() -> run()。
- *
- * 所有业务对象都是组件容器里的组件，由 host 持有并与 host 同寿命；这里不再有手工排序
- * 的装配结构体，也不再有「先建中间件、后填依赖」的两段式初始化。构建失败时
- * build_error::describe() 给出阶段、组件链与配置路径。
- */
+
 module cnetboot.bootstrap.application;
 
 import std;

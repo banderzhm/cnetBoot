@@ -1,6 +1,4 @@
-/**
- * @brief chat_module：会话持久化、对话服务与路由（全部需要令牌）。
- */
+
 module cnetboot.bootstrap.modules;
 
 import std;
@@ -60,11 +58,11 @@ void chat_module::configure_options(application::options_registry &options) {
   options.section<chat::chat_options>("chat").validate(
       [](const chat::chat_options &value) -> std::expected<void, std::string> {
         if (value.history_limit == 0)
-          return std::unexpected{"history_limit 必须大于 0"};
+          return std::unexpected{"history_limit must be greater than 0"};
         if (value.token_budget < 256)
-          return std::unexpected{"token_budget 不能小于 256"};
+          return std::unexpected{"token_budget must be at least 256"};
         if (value.max_tokens <= 0)
-          return std::unexpected{"max_tokens 必须大于 0"};
+          return std::unexpected{"max_tokens must be greater than 0"};
         return {};
       });
 }

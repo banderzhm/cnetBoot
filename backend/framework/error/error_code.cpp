@@ -4,58 +4,58 @@ import std;
 
 namespace {
 
-/// 唯一注册表：新增错误码必须同时补登记表项并更新 contracts/error_codes.yaml。
+/// Single source of truth. Keep contracts/error_codes.yaml synchronized.
 constexpr std::array k_registry{
-    cnetboot::framework::error::error_entry{cnetboot::framework::error::error_code::ok, "SYSTEM.OK", 200, "成功", "platform", "system", false,
+    cnetboot::framework::error::error_entry{cnetboot::framework::error::error_code::ok, "SYSTEM.OK", 200, "Success", "platform", "system", false,
         true, false},
     cnetboot::framework::error::error_entry{cnetboot::framework::error::error_code::request_invalid_argument, "REQUEST.INVALID_ARGUMENT", 400,
-        "请求参数不合法", "platform", "request", false, true, false},
+        "Invalid request arguments", "platform", "request", false, true, false},
     cnetboot::framework::error::error_entry{cnetboot::framework::error::error_code::category_invalid, "CHAT.CATEGORY_INVALID", 400,
-        "会话分类不合法", "chat", "request", false, true, false},
+        "Invalid chat category", "chat", "request", false, true, false},
     cnetboot::framework::error::error_entry{cnetboot::framework::error::error_code::ai_request_failed, "AI.REQUEST_FAILED", 422,
-        "AI 无法处理当前请求", "ai", "dependency", false, true, false},
+        "AI could not process the request", "ai", "dependency", false, true, false},
     cnetboot::framework::error::error_entry{cnetboot::framework::error::error_code::upstream_unavailable, "DEPENDENCY.UNAVAILABLE", 503,
-        "上游依赖暂不可用，请稍后重试", "platform", "dependency", true, true, false},
+        "An upstream dependency is temporarily unavailable", "platform", "dependency", true, true, false},
     cnetboot::framework::error::error_entry{cnetboot::framework::error::error_code::auth_invalid_credentials, "AUTH.INVALID_CREDENTIALS", 401,
-        "账号或密码错误", "identity", "authentication", false, true, false},
+        "Invalid username or password", "identity", "authentication", false, true, false},
     cnetboot::framework::error::error_entry{cnetboot::framework::error::error_code::auth_token_missing, "AUTH.TOKEN_MISSING", 401,
-        "缺少访问令牌", "identity", "authentication", false, true, false},
+        "Access token is required", "identity", "authentication", false, true, false},
     cnetboot::framework::error::error_entry{cnetboot::framework::error::error_code::auth_token_invalid, "AUTH.TOKEN_INVALID", 401,
-        "访问令牌无效", "identity", "authentication", false, true, false},
+        "Access token is invalid", "identity", "authentication", false, true, false},
     cnetboot::framework::error::error_entry{cnetboot::framework::error::error_code::auth_token_expired, "AUTH.TOKEN_EXPIRED", 401,
-        "访问令牌已过期，请重新登录", "identity", "authentication", false, true, false},
+        "Access token has expired", "identity", "authentication", false, true, false},
     cnetboot::framework::error::error_entry{cnetboot::framework::error::error_code::auth_forbidden, "AUTH.FORBIDDEN", 403,
-        "没有执行该操作的权限", "identity", "authorization", false, true, false},
+        "Permission denied", "identity", "authorization", false, true, false},
     cnetboot::framework::error::error_entry{cnetboot::framework::error::error_code::auth_account_locked, "AUTH.ACCOUNT_LOCKED", 423,
-        "账号已被临时锁定，请稍后重试", "identity", "authentication", true, true, false},
+        "Account is temporarily locked", "identity", "authentication", true, true, false},
     cnetboot::framework::error::error_entry{cnetboot::framework::error::error_code::auth_account_disabled, "AUTH.ACCOUNT_DISABLED", 403,
-        "账号已被停用", "identity", "authentication", false, true, false},
-    cnetboot::framework::error::error_entry{cnetboot::framework::error::error_code::user_not_found, "USER.NOT_FOUND", 404, "用户不存在",
+        "Account is disabled", "identity", "authentication", false, true, false},
+    cnetboot::framework::error::error_entry{cnetboot::framework::error::error_code::user_not_found, "USER.NOT_FOUND", 404, "User not found",
         "identity", "request", false, true, false},
-    cnetboot::framework::error::error_entry{cnetboot::framework::error::error_code::user_conflict, "USER.CONFLICT", 409, "用户已存在或状态冲突",
+    cnetboot::framework::error::error_entry{cnetboot::framework::error::error_code::user_conflict, "USER.CONFLICT", 409, "User already exists or has a conflicting state",
         "identity", "request", false, true, false},
-    cnetboot::framework::error::error_entry{cnetboot::framework::error::error_code::role_not_found, "ROLE.NOT_FOUND", 404, "角色不存在",
+    cnetboot::framework::error::error_entry{cnetboot::framework::error::error_code::role_not_found, "ROLE.NOT_FOUND", 404, "Role not found",
         "identity", "request", false, true, false},
     cnetboot::framework::error::error_entry{cnetboot::framework::error::error_code::role_conflict, "ROLE.CONFLICT", 409,
-        "角色编码已存在或状态冲突", "identity", "request", false, true, false},
+        "Role code already exists or has a conflicting state", "identity", "request", false, true, false},
     cnetboot::framework::error::error_entry{cnetboot::framework::error::error_code::permission_not_found, "PERMISSION.NOT_FOUND", 404,
-        "权限不存在", "identity", "request", false, true, false},
+        "Permission not found", "identity", "request", false, true, false},
     cnetboot::framework::error::error_entry{cnetboot::framework::error::error_code::setting_not_found, "SETTING.NOT_FOUND", 404,
-        "系统设置不存在", "identity", "request", false, true, false},
+        "Setting not found", "identity", "request", false, true, false},
     cnetboot::framework::error::error_entry{cnetboot::framework::error::error_code::request_method_not_allowed,
-        "REQUEST.METHOD_NOT_ALLOWED", 405, "该资源不支持此请求方法", "platform", "request", false, true, false},
+        "REQUEST.METHOD_NOT_ALLOWED", 405, "Method not allowed for this resource", "platform", "request", false, true, false},
     cnetboot::framework::error::error_entry{cnetboot::framework::error::error_code::chat_session_not_found, "CHAT.SESSION_NOT_FOUND", 404,
-        "会话不存在", "chat", "request", false, true, false},
+        "Chat session not found", "chat", "request", false, true, false},
     cnetboot::framework::error::error_entry{cnetboot::framework::error::error_code::department_not_found, "DEPARTMENT.NOT_FOUND", 404,
-        "部门不存在", "identity", "request", false, true, false},
+        "Department not found", "identity", "request", false, true, false},
     cnetboot::framework::error::error_entry{cnetboot::framework::error::error_code::department_conflict, "DEPARTMENT.CONFLICT", 409,
-        "部门仍有下级或成员，或层级关系冲突", "identity", "request", false, true, false},
+        "Department has children or members, or its hierarchy conflicts", "identity", "request", false, true, false},
     cnetboot::framework::error::error_entry{cnetboot::framework::error::error_code::request_rate_limited, "REQUEST.RATE_LIMITED", 429,
-        "请求过于频繁，请稍后重试", "platform", "request", true, true, false},
+        "Too many requests", "platform", "request", true, true, false},
     cnetboot::framework::error::error_entry{cnetboot::framework::error::error_code::request_not_found, "REQUEST.NOT_FOUND", 404,
-        "请求的资源路径不存在", "platform", "request", false, true, false},
+        "Resource not found", "platform", "request", false, true, false},
     cnetboot::framework::error::error_entry{cnetboot::framework::error::error_code::system_internal_error, "SYSTEM.INTERNAL_ERROR", 500,
-        "系统内部错误", "platform", "system", false, false, false},
+        "Internal server error", "platform", "system", false, false, false},
 };
 
 constexpr std::array k_prefixes{std::string_view{"SYSTEM"}, std::string_view{"REQUEST"},
@@ -65,7 +65,7 @@ constexpr std::array k_prefixes{std::string_view{"SYSTEM"}, std::string_view{"RE
 
 constexpr std::array k_http_statuses{200, 400, 401, 403, 404, 405, 409, 422, 423, 429, 500, 502, 503, 504};
 
-/// @brief 注册码必须形如 <MODULE>.<MEANING>，两段均为大写字母、数字或下划线。
+/// Registration names use <MODULE>.<MEANING> with uppercase letters, digits, or underscores.
 auto is_valid_name(std::string_view name) noexcept -> bool
 {
     const auto separator = name.find('.');
@@ -111,7 +111,7 @@ auto find(error_code code) noexcept -> std::optional<error_entry>
 
 auto validate() noexcept -> std::expected<void, std::error_code>
 {
-    // 1. 注册码唯一、格式合法、前缀已登记、HTTP 状态与必填字段合法。
+    // Registration names and enum values are unique and structurally valid.
     for (std::size_t i = 0; i < k_registry.size(); ++i)
     {
         const auto& entry = k_registry[i];
@@ -129,7 +129,7 @@ auto validate() noexcept -> std::expected<void, std::error_code>
         }
     }
 
-    // 2. 每个枚举值必须恰有一条登记：未登记的错误码禁止对外使用。
+    // Every enum value must have exactly one public registry entry.
     constexpr auto last = static_cast<std::uint16_t>(error_code::system_internal_error);
     for (std::uint16_t raw = 0; raw <= last; ++raw)
     {

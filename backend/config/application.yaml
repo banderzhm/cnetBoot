@@ -1,9 +1,9 @@
 application:
   name: cnetboot
   install_signal_handlers: true
-  # 业务 HTTP 事件循环数；连接固定归属一个循环。连接池上限是全应用总量，按循环平摊，
-  # 因此不得超过任一已启用连接池的 maximum_size。
-  io_threads: 1   # 可由 cnetmod 的 CNETMOD_IO_THREADS 环境层覆盖
+  # HTTP event-loop count. Each connection belongs to one loop, while connection-pool
+  # limits are application-wide and distributed across loops.
+  io_threads: 1   # CNETMOD_IO_THREADS may override this value.
 
 crash_dump:
   directory: crash
@@ -82,28 +82,28 @@ chat:
   reasoning_effort: ""
   max_tokens: 1024
 
-# LLM 供应商目录（ai_module 显式声明的 typed options）。providers 为空表示不启用
-# LLM：对话返回 DEPENDENCY.UNAVAILABLE，/api/v1/llm/providers 返回
-# configured=false。多供应商 / 多 key 配置见 config/llm.providers.example.yaml。
+# LLM provider catalog declared explicitly by ai_module. An empty providers list disables
+# LLM calls: chat returns DEPENDENCY.UNAVAILABLE and the catalog reports configured=false.
+# See config/llm.providers.example.yaml for multi-provider and multi-key configuration.
 llm:
   providers: []
 
-# 入口层（platform_module 声明）：客户端识别与按路由声明的限流策略。
-# 部署在反向代理之后时，把代理地址（或 CIDR）写进 trusted_proxies；否则所有请求都会
-# 按代理地址计数。只有来自可信代理的 X-Forwarded-For 才会被采信。
+# Edge settings owned by platform_module: client identification and route-specific limits.
+# Add reverse-proxy addresses or CIDRs to trusted_proxies. X-Forwarded-For is accepted only
+# from those proxies.
 edge:
   trusted_proxies: []
   rate_limits:
-    login: {rate_per_second: 0.2, burst: 5}          # 登录：约每 5 秒 1 次，突发 5 次
-    ai: {rate_per_second: 0.05, burst: 3}             # AI 生成：约每 20 秒 1 次，突发 3 次
+    login: {rate_per_second: 0.2, burst: 5}
+    ai: {rate_per_second: 0.05, burst: 3}
 
-# 身份（identity_module 声明）：登录防爆破与授权快照缓存。
+# Identity settings owned by identity_module.
 identity:
   login:
-    max_account_failures: 5    # 同一账号窗口内失败次数上限（跨所有客户端）
-    max_client_failures: 20    # 同一客户端地址窗口内失败次数上限（跨所有账号）
+    max_account_failures: 5    # Per-account failures within the window.
+    max_client_failures: 20    # Per-client failures within the window.
     window_seconds: 900
     lock_seconds: 900
-  # 授权快照（角色 / 权限 / 数据范围）进程内缓存秒数；0 关闭。
-  # 会话撤销（logout / refresh）每个请求都校验，立即生效；停用账号或调整角色最迟在此时长后生效。
+  # In-process authorization snapshot TTL. Zero disables the cache. Session revocation is
+  # checked on every request; account and role changes propagate within this TTL.
   principal_cache_seconds: 30

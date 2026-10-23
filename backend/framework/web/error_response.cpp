@@ -9,6 +9,12 @@ import cnetmod.json;
 import cnetmod.protocol.http;
 import cnetboot.framework.error;
 
+CNETMOD_JSON(cnetboot::framework::web::error_response,
+    CNETMOD_JSON_FIELD(code),
+    CNETMOD_JSON_FIELD(status),
+    CNETMOD_JSON_FIELD(message),
+    CNETMOD_JSON_FIELD(retryable))
+
 namespace cnetboot::framework::web {
 
 auto error_http_status(cnetboot::framework::error::error_code code) noexcept -> int
@@ -21,7 +27,7 @@ auto error_body(cnetboot::framework::error::error_code code) -> error_response
 {
     const auto entry = cnetboot::framework::error::find(code);
     if (!entry)
-        return {"500", "SYSTEM.INTERNAL_ERROR", "错误码未登记", false};
+        return {"500", "SYSTEM.INTERNAL_ERROR", "Unregistered error code", false};
     return {
         .code = std::to_string(entry->http_status),
         .status = std::string{entry->name},

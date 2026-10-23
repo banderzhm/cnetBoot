@@ -1,3 +1,7 @@
+module;
+
+#include <cnetmod/json.hpp>
+
 export module cnetboot.system.dto.authorization;
 
 import std;
@@ -51,3 +55,26 @@ struct authorization_dto
     -> cnetmod::json::document;
 
 } // namespace cnetboot::system
+
+CNETMOD_JSON(cnetboot::system::role_dto,
+    CNETMOD_JSON_FIELD(id),
+    CNETMOD_JSON_FIELD(name),
+    CNETMOD_JSON_FIELD(key))
+
+CNETMOD_JSON(cnetboot::system::menu_dto,
+    CNETMOD_JSON_FIELD(id),
+    ::cnetmod::json::field("parentId", &_cnetmod_json_type::parent_id),
+    CNETMOD_JSON_FIELD(name),
+    CNETMOD_JSON_FIELD(path),
+    CNETMOD_JSON_FIELD(component),
+    CNETMOD_JSON_FIELD(permission),
+    CNETMOD_JSON_FIELD(type),
+    CNETMOD_JSON_FIELD(icon),
+    CNETMOD_JSON_FIELD(order),
+    CNETMOD_JSON_FIELD(children))
+
+CNETMOD_JSON(cnetboot::system::authorization_dto,
+    ::cnetmod::json::field("userId", &_cnetmod_json_type::user_id),
+    CNETMOD_JSON_FIELD(roles),
+    CNETMOD_JSON_FIELD(permissions),
+    CNETMOD_JSON_FIELD(menus))

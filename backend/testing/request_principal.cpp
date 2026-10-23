@@ -44,7 +44,7 @@ auto main() -> int
         current->permissions != std::vector<std::string>{"system:user:list"})
         return 1;
 
-    // 端点授权：路由声明 requires_permission()，中间件在匹配后读取元数据。
+
     const auto authorize = [current](std::string permission) -> std::pair<bool, int>
     {
         auto io = cnetmod::make_io_context();
@@ -52,12 +52,12 @@ auto main() -> int
         cnetmod::http::response response;
         cnetmod::http::header_map headers;
         cnetmod::http::route_params params;
-        auto endpoint = std::make_shared<cnetmod::http::endpoint>();
-        endpoint->method = cnetmod::http::http_method::GET;
-        endpoint->pattern = "/api/system/users";
-        endpoint->metadata =
+        cnetmod::http::endpoint endpoint;
+        endpoint.method = cnetmod::http::http_method::GET;
+        endpoint.pattern = "/api/system/users";
+        endpoint.metadata =
             cnetboot::security::requires_permission(std::move(permission));
-        params.matched = std::move(endpoint);
+        params.matched = &endpoint;
         cnetmod::http::request_context request{
             *io, peer, "GET", "/api/system/users", headers, {}, response,
             std::move(params)};

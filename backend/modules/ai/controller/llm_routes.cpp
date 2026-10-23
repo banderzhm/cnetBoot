@@ -1,8 +1,4 @@
-/**
- * @brief llm_routes 的实现：把 llm_catalog_json 作为响应体直接下发。
- *
- * 走 cnetmod 的 context.json(status, body)，由框架统一设置 content-type 与状态码。
- */
+
 module cnetboot.ai.controller.llm_routes;
 
 import std;

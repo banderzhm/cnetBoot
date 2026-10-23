@@ -1,7 +1,4 @@
-/**
- * @brief platform_module：跨业务的基础能力（入口限流、请求体上限、XML
- * 语句集、审计）。
- */
+
 module cnetboot.bootstrap.modules;
 
 import std;
@@ -21,7 +18,7 @@ import cnetboot.framework.web.rate_limit;
 namespace cnetboot::bootstrap {
 namespace {
 
-/// 请求体上限。cnetmod 提供但默认不安装，基础模板在入口统一限制。
+
 constexpr std::size_t request_body_limit{1024 * 1024};
 
 /**
@@ -36,7 +33,7 @@ constexpr std::size_t request_body_limit{1024 * 1024};
     -> std::expected<void, std::string> {
   if (options.mapper_directory.find_first_not_of(" \t\r\n") ==
       std::string::npos)
-    return std::unexpected{"mapper_directory 不能为空"};
+    return std::unexpected{"mapper_directory must not be empty"};
   return {};
 }
 
@@ -93,7 +90,7 @@ auto platform_module::compose(
                             cnetboot::framework::web::edge_options>>(
                             cnetboot::framework::web::edge_section_name)
                         .current();
-  // 未匹配路由的 404 / 405 也走统一错误格式（405 的 Allow 头由框架设置）。
+
   context.routes.on_unmatched(
       [](cnetmod::http::request_context &request,
          const cnetmod::http::unmatched_request &unmatched)
@@ -106,7 +103,7 @@ auto platform_module::compose(
                 : cnetboot::framework::error::error_code::request_not_found);
         co_return;
       });
-  // 限流最先执行：被拒绝的请求不读请求体、不做认证，也不触碰任何下游资源。
+
   context.middleware.push_back(
       cnetboot::framework::web::rate_limit_middleware(*edge));
   context.middleware.push_back(cnetmod::body_limit(request_body_limit));

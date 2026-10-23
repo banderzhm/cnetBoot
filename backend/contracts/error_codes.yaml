@@ -1,10 +1,9 @@
-# 错误码唯一注册表（人工维护）。
-# 任何改动都必须同步 backend/framework/error/error_code.cpp 的 k_registry，
-# 并由 framework_error_contract CTest 用例校验一致。
+# Canonical error-code contract. Keep it synchronized with k_registry in
+# backend/framework/error/error_code.cpp; framework_error_contract verifies it.
 errors:
   - code: SYSTEM.OK
     httpStatus: 200
-    defaultMessage: 成功
+    defaultMessage: Success
     owner: platform
     category: system
     retryable: false
@@ -12,7 +11,7 @@ errors:
     deprecated: false
   - code: REQUEST.INVALID_ARGUMENT
     httpStatus: 400
-    defaultMessage: 请求参数不合法
+    defaultMessage: Invalid request arguments
     owner: platform
     category: request
     retryable: false
@@ -20,7 +19,7 @@ errors:
     deprecated: false
   - code: CHAT.CATEGORY_INVALID
     httpStatus: 400
-    defaultMessage: 会话分类不合法
+    defaultMessage: Invalid chat category
     owner: chat
     category: request
     retryable: false
@@ -28,7 +27,7 @@ errors:
     deprecated: false
   - code: AI.REQUEST_FAILED
     httpStatus: 422
-    defaultMessage: AI 无法处理当前请求
+    defaultMessage: AI could not process the request
     owner: ai
     category: dependency
     retryable: false
@@ -36,7 +35,7 @@ errors:
     deprecated: false
   - code: DEPENDENCY.UNAVAILABLE
     httpStatus: 503
-    defaultMessage: 上游依赖暂不可用，请稍后重试
+    defaultMessage: An upstream dependency is temporarily unavailable
     owner: platform
     category: dependency
     retryable: true
@@ -44,7 +43,7 @@ errors:
     deprecated: false
   - code: AUTH.INVALID_CREDENTIALS
     httpStatus: 401
-    defaultMessage: 账号或密码错误
+    defaultMessage: Invalid username or password
     owner: identity
     category: authentication
     retryable: false
@@ -52,7 +51,7 @@ errors:
     deprecated: false
   - code: AUTH.TOKEN_MISSING
     httpStatus: 401
-    defaultMessage: 缺少访问令牌
+    defaultMessage: Access token is required
     owner: identity
     category: authentication
     retryable: false
@@ -60,7 +59,7 @@ errors:
     deprecated: false
   - code: AUTH.TOKEN_INVALID
     httpStatus: 401
-    defaultMessage: 访问令牌无效
+    defaultMessage: Access token is invalid
     owner: identity
     category: authentication
     retryable: false
@@ -68,7 +67,7 @@ errors:
     deprecated: false
   - code: AUTH.TOKEN_EXPIRED
     httpStatus: 401
-    defaultMessage: 访问令牌已过期，请重新登录
+    defaultMessage: Access token has expired
     owner: identity
     category: authentication
     retryable: false
@@ -76,7 +75,7 @@ errors:
     deprecated: false
   - code: AUTH.FORBIDDEN
     httpStatus: 403
-    defaultMessage: 没有执行该操作的权限
+    defaultMessage: Permission denied
     owner: identity
     category: authorization
     retryable: false
@@ -84,7 +83,7 @@ errors:
     deprecated: false
   - code: AUTH.ACCOUNT_LOCKED
     httpStatus: 423
-    defaultMessage: 账号已被临时锁定，请稍后重试
+    defaultMessage: Account is temporarily locked
     owner: identity
     category: authentication
     retryable: true
@@ -92,7 +91,7 @@ errors:
     deprecated: false
   - code: AUTH.ACCOUNT_DISABLED
     httpStatus: 403
-    defaultMessage: 账号已被停用
+    defaultMessage: Account is disabled
     owner: identity
     category: authentication
     retryable: false
@@ -100,7 +99,7 @@ errors:
     deprecated: false
   - code: USER.NOT_FOUND
     httpStatus: 404
-    defaultMessage: 用户不存在
+    defaultMessage: User not found
     owner: identity
     category: request
     retryable: false
@@ -108,7 +107,7 @@ errors:
     deprecated: false
   - code: USER.CONFLICT
     httpStatus: 409
-    defaultMessage: 用户已存在或状态冲突
+    defaultMessage: User already exists or has a conflicting state
     owner: identity
     category: request
     retryable: false
@@ -116,7 +115,7 @@ errors:
     deprecated: false
   - code: ROLE.NOT_FOUND
     httpStatus: 404
-    defaultMessage: 角色不存在
+    defaultMessage: Role not found
     owner: identity
     category: request
     retryable: false
@@ -124,7 +123,7 @@ errors:
     deprecated: false
   - code: ROLE.CONFLICT
     httpStatus: 409
-    defaultMessage: 角色编码已存在或状态冲突
+    defaultMessage: Role code already exists or has a conflicting state
     owner: identity
     category: request
     retryable: false
@@ -132,7 +131,7 @@ errors:
     deprecated: false
   - code: PERMISSION.NOT_FOUND
     httpStatus: 404
-    defaultMessage: 权限不存在
+    defaultMessage: Permission not found
     owner: identity
     category: request
     retryable: false
@@ -140,7 +139,7 @@ errors:
     deprecated: false
   - code: SETTING.NOT_FOUND
     httpStatus: 404
-    defaultMessage: 系统设置不存在
+    defaultMessage: Setting not found
     owner: identity
     category: request
     retryable: false
@@ -148,7 +147,7 @@ errors:
     deprecated: false
   - code: REQUEST.METHOD_NOT_ALLOWED
     httpStatus: 405
-    defaultMessage: 该资源不支持此请求方法
+    defaultMessage: Method not allowed for this resource
     owner: platform
     category: request
     retryable: false
@@ -156,7 +155,7 @@ errors:
     deprecated: false
   - code: CHAT.SESSION_NOT_FOUND
     httpStatus: 404
-    defaultMessage: 会话不存在
+    defaultMessage: Chat session not found
     owner: chat
     category: request
     retryable: false
@@ -164,7 +163,7 @@ errors:
     deprecated: false
   - code: DEPARTMENT.NOT_FOUND
     httpStatus: 404
-    defaultMessage: 部门不存在
+    defaultMessage: Department not found
     owner: identity
     category: request
     retryable: false
@@ -172,7 +171,7 @@ errors:
     deprecated: false
   - code: DEPARTMENT.CONFLICT
     httpStatus: 409
-    defaultMessage: 部门仍有下级或成员，或层级关系冲突
+    defaultMessage: Department has children or members, or its hierarchy conflicts
     owner: identity
     category: request
     retryable: false
@@ -180,7 +179,7 @@ errors:
     deprecated: false
   - code: REQUEST.RATE_LIMITED
     httpStatus: 429
-    defaultMessage: 请求过于频繁，请稍后重试
+    defaultMessage: Too many requests
     owner: platform
     category: request
     retryable: true
@@ -188,7 +187,7 @@ errors:
     deprecated: false
   - code: REQUEST.NOT_FOUND
     httpStatus: 404
-    defaultMessage: 请求的资源路径不存在
+    defaultMessage: Resource not found
     owner: platform
     category: request
     retryable: false
@@ -196,7 +195,7 @@ errors:
     deprecated: false
   - code: SYSTEM.INTERNAL_ERROR
     httpStatus: 500
-    defaultMessage: 系统内部错误
+    defaultMessage: Internal server error
     owner: platform
     category: system
     retryable: false

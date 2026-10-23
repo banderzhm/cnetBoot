@@ -7,13 +7,13 @@ namespace {
 
 namespace json = cnetmod::json;
 
-/// @brief 取一个必需成员；缺失返回 nullptr。
+
 auto member(const json::document& source, std::string_view key) -> const json::document*
 {
     return json::find(source, key);
 }
 
-/// @brief 逐字段比对 YAML 登记项与 C++ 注册表项。
+
 auto matches(const json::document& entry,
     const cnetboot::framework::error::error_entry& registered) -> bool
 {
@@ -40,13 +40,13 @@ auto matches(const json::document& entry,
 
 } // namespace
 
-// 契约用例：backend/contracts/error_codes.yaml 与 C++ 注册表必须一一对应，
-// 无缺项也无多余项。依赖 CTest 的 WORKING_DIRECTORY 指向 backend/。
+
+
 //
-// 迁移自 legacy application tests/error_code_contract_test.cpp。两处口径变化：
-//  - 玄学用 nlohmann::json 读 YAML 文档，cnetBoot 用 cnetmod.json（同一份文档、
-//    同一套 find()/get()/as() 取值口径），因此这里不 import nlohmann.json；
-//  - 契约文件随仓库搬到 backend/contracts/error_codes.yaml。
+
+
+
+
 auto main() -> int
 {
     const auto document = cnetmod::application::load_yaml_configuration_document("contracts/error_codes.yaml");
@@ -60,7 +60,7 @@ auto main() -> int
     if (found->get_array().size() != registered.size())
         return 3;
 
-    // 1. YAML 里的每一项都必须命中 C++ 注册表且逐字段一致。
+
     for (const auto& entry : found->get_array())
     {
         const auto* code = cnetmod::json::find(entry, "code");
@@ -72,7 +72,7 @@ auto main() -> int
             return 4;
     }
 
-    // 2. C++ 注册表里的每一个码都必须在 YAML 中登记，禁止只存在于代码里的错误码。
+
     for (const auto& entry : registered)
     {
         const auto present = std::ranges::any_of(found->get_array(),
@@ -85,7 +85,7 @@ auto main() -> int
             return 5;
     }
 
-    // 3. 注册表本身的结构校验。
+
     if (const auto valid = cnetboot::framework::error::validate(); !valid)
         return 6;
     return 0;

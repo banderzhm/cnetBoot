@@ -18,7 +18,9 @@ done
 }
 cnetmod_prefix="$(cd "$cnetmod_dir/../../.." && pwd)"
 
-cmake -S "$source_dir" -B "$build_dir" -G Ninja \
+fresh=()
+if [[ "${CNETBOOT_FRESH:-0}" == 1 ]]; then fresh+=(--fresh); fi
+cmake "${fresh[@]}" -S "$source_dir" -B "$build_dir" -G Ninja \
     -DCMAKE_BUILD_TYPE=Release \
     -DCMAKE_CXX_COMPILER="$(command -v clang++)" \
     -DBUILD_TESTING="$build_testing" \

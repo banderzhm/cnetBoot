@@ -2,10 +2,10 @@ import std;
 import cnetboot.framework.error;
 import cnetboot.framework.web.error_response;
 
-// 错误码注册表用例：唯一性、格式、前缀、HTTP 状态、枚举覆盖与响应映射。
-// 迁移自 legacy application tests/error_code_registry_test.cpp：断言逐条保留，
-// 命名换成 cnetboot 口径（application error -> cnetboot::framework::error，
-// transport errors -> cnetboot::framework::web::error_*）。
+
+
+
+// transport errors -> cnetboot::framework::web::error_*).
 auto main() -> int
 {
     if (const auto valid = cnetboot::framework::error::validate(); !valid)
@@ -25,7 +25,7 @@ auto main() -> int
             cnetboot::framework::error::error_code::category_invalid) != 400)
         return 6;
 
-    // 契约：code 是 HTTP 状态码字符串，status 才是注册码。
+
     const auto body = cnetboot::framework::web::error_body(
         cnetboot::framework::error::error_code::category_invalid);
     if (body.code != "400" || body.status != "CHAT.CATEGORY_INVALID" || body.retryable)

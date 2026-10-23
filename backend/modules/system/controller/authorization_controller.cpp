@@ -13,7 +13,7 @@ import cnetboot.system.dto.authorization;
 
 namespace cnetboot::system {
 
-/** @brief 授权快照路由的依赖：共享的授权服务。 */
+
 struct authorization_route_dependencies
 {
     std::shared_ptr<authorization_service> service;
@@ -36,7 +36,7 @@ namespace {
 
 } // namespace
 
-/** @brief GET /api/system/users/:id/authorization：返回用户权限快照。 */
+
 [[nodiscard]] auto handle_authorization(
     cnetmod::http::request_context& request,
     const authorization_route_dependencies& dependencies) -> cnetmod::task<void>

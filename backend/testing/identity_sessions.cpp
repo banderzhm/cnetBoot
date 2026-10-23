@@ -1,13 +1,4 @@
-/**
- * @brief 登录防护与 JWT 会话生命周期（直连真实 Redis）。
- *
- *  - login_guard：按账号、按客户端地址分别计数并锁定；成功登录只清账号计数；
- *  - jwt_session_store：open / touch / rotate / revoke，轮换后旧会话立即失效；
- *  - Redis 不可达：两者都返回 DEPENDENCY.UNAVAILABLE（fail closed），不放行。
- *
- * 连不上 Redis 时返回 77，由 CTest 的 SKIP_RETURN_CODE 记为 Skipped。
- * 可用 CNETBOOT_TEST_REDIS_HOST / CNETBOOT_TEST_REDIS_PORT 覆盖地址。
- */
+
 import std;
 import cnetmod.coro;
 import cnetmod.io;
@@ -39,7 +30,7 @@ auto pool_parameters(std::string host, std::uint16_t port) -> cnetmod::redis::po
         .ping_interval = std::chrono::hours{1}};
 }
 
-/// @brief 每次运行独占一个键命名空间，互不污染；残留键随 TTL 过期。
+
 auto unique_prefix() -> std::string
 {
     return std::format("cnetboot-test:{}:identity:",
@@ -202,7 +193,7 @@ auto main() -> int
         return k_skipped;
     }
 
-    // Redis 不可达（端口 1 无监听）：fail closed。
+
     run_with_pool(*io, pool_parameters("127.0.0.1", 1),
         [&](cnetmod::redis::connection_pool& pool) -> cnetmod::task<void>
         {

@@ -2,11 +2,17 @@ backend/build/
 .idea/
 .vscode/
 crash/
+*.log
+.env
+.env.*
+!.env.example
+backend/config/application.local.yaml
 
 # Out-of-tree build and scratch trees created by local tooling. They hold
 # object files and probe projects that must never reach the repository.
 build*/
 .dsh-tmp/
+.tmp-*/
 3rdparty/build-windows/
 3rdparty/build-wsl-clang/
 3rdparty/windows/

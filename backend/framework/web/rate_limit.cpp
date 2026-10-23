@@ -15,7 +15,7 @@ namespace {
     {
         if (!(rule.rate_per_second > 0.0) || !(rule.burst >= 1.0))
             return std::unexpected{std::format(
-                "rate_limits.{} 需要 rate_per_second > 0 且 burst >= 1", name)};
+                "rate_limits.{} requires rate_per_second > 0 and burst >= 1", name)};
         return {};
     }
 
@@ -34,7 +34,7 @@ namespace {
         });
     }
 
-    /// @brief 每个策略一个限流器；中间件副本共享同一组全进程令牌桶。
+
     struct policy_limiters
     {
         cnetmod::http::middleware_fn login;
@@ -61,7 +61,7 @@ auto validate_edge_options(const edge_options& options)
 {
     for (const auto& proxy : options.trusted_proxies)
         if (proxy.find_first_not_of(" \t") == std::string::npos)
-            return std::unexpected{std::string{"trusted_proxies 不能包含空项"}};
+            return std::unexpected{std::string{"trusted_proxies must not contain empty entries"}};
     if (auto valid = validate_rule(options.rate_limits.login, "login"); !valid)
         return valid;
     return validate_rule(options.rate_limits.ai, "ai");

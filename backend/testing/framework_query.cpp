@@ -3,18 +3,16 @@ import cnetboot.framework.web.query;
 
 namespace query = cnetboot::framework::web::query;
 
-// query 解析用例：百分号解码、'+'、整数与整数列表的边界。
-// 迁移自 legacy application tests/query_test.cpp：断言逐条保留，
-// 命名换成 cnetboot::framework::web::query。
+// Query parsing contract: percent decoding, '+', integers, and integer lists.
 auto main() -> int
 {
-    constexpr std::string_view raw = "a=1&b=hello%20world&c=%E5%9B%9E%E6%AC%BE&d=x+y&e=&n=42&bad=4x&l=1,3";
+    constexpr std::string_view raw = "a=1&b=hello%20world&c=payment&d=x+y&e=&n=42&bad=4x&l=1,3";
 
     if (query::value(raw, "a").value_or("") != "1")
         return 1;
     if (query::value(raw, "b").value_or("") != "hello world")
         return 2;
-    if (query::value(raw, "c").value_or("") != "回款")
+    if (query::value(raw, "c").value_or("") != "payment")
         return 3;
     if (query::value(raw, "d").value_or("") != "x y")
         return 4;

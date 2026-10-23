@@ -16,7 +16,7 @@ namespace {
 
 using error_code = cnetboot::framework::error::error_code;
 
-/// @brief UTF-8 安全截断：不切开多字节字符（宁可少一个字符也不产生乱码）。
+
 auto truncate_utf8(std::string_view text, std::size_t limit) -> std::string
 {
     if (text.size() <= limit)
@@ -27,7 +27,7 @@ auto truncate_utf8(std::string_view text, std::size_t limit) -> std::string
     return std::string{text.substr(0, size)};
 }
 
-/// @brief 用首条用户消息生成会话标题：取首行、压缩首尾空白、截断到 40 字节。
+
 auto title_from_content(std::string_view content) -> std::string
 {
     const auto line_end = content.find_first_of("\r\n");
@@ -201,7 +201,7 @@ auto chat_service::assemble_context(const cnetboot::chat::chat_session& session,
         .default_system_prompt = options_.system_prompt,
     };
 
-    // 边界投影：domain 的 context_message 在这里**只做一次**投影成 LLM 消息。
+
     auto built = cnetboot::chat::build_chat_context(session, history, reference_context,
         pending_user_content, options);
     chat_context_assembly assembled;
@@ -218,12 +218,12 @@ auto chat_service::build_llm_request(const cnetboot::chat::chat_session& session
     const chat_message_request& request) const -> cnetmod::task<cnetboot::ai::llm_request>
 {
     cnetboot::ai::llm_request result;
-    // 存储层按同一目标窗口读最近 N 条（避免为裁剪把整段历史读进内存）。
-    // 条数与 token 的**最终裁剪策略**仍是 domain 的 build_chat_context。
+
+
     const auto history = co_await mapper_->find_recent_messages(session.id, options_.history_limit);
     if (!history)
     {
-        // 历史读失败不阻断本轮：退化成「只有系统提示词 + 本条输入」，并留日志。
+
         logger::warn{"chat history load failed: session={} error={}", session.id,
             static_cast<int>(history.error())};
     }
@@ -232,7 +232,7 @@ auto chat_service::build_llm_request(const cnetboot::chat::chat_session& session
                 : std::span<const cnetboot::chat::chat_message>{}};
 
     auto assembled = assemble_context(session, window, request.reference_context, request.content);
-    // 裁剪是窗口策略而非错误：只有真的裁掉了历史、或裁完仍超预算时才记一行。
+
     const auto& trim = assembled.trim;
     if (trim.removed_messages > 0 || !trim.limit_satisfied)
     {
@@ -245,7 +245,7 @@ auto chat_service::build_llm_request(const cnetboot::chat::chat_session& session
     }
     result.messages = std::move(assembled.messages);
 
-    // 供应商与模型：会话覆盖优先，否则用服务默认（为空由 LLM 服务再兜一层默认值）。
+
     result.provider = options_.provider;
     result.model = session.model.empty() ? options_.model : session.model;
     result.temperature = session.temperature;
@@ -275,7 +275,7 @@ auto chat_service::prepare_turn(std::uint64_t session_id, const chat_message_req
 {
     if (llm_ == nullptr || !llm_->configured())
         co_return std::unexpected{error_code::upstream_unavailable};
-    // 兜底校验（transport 已经用更具体的文案挡过一次）：按**字符数**而不是字节数计。
+
     if (request.content.empty() ||
         cnetboot::chat::count_characters(request.content) >
             cnetboot::chat::max_message_characters ||
@@ -291,7 +291,7 @@ auto chat_service::prepare_turn(std::uint64_t session_id, const chat_message_req
 
     turn_plan plan;
     plan.session = found->value();
-    // 首条消息：把默认标题换成消息摘要，避免会话列表全是「新会话」。
+
     if (plan.session.message_count == 0 &&
         (plan.session.title.empty() || plan.session.title == default_session_title))
     {
@@ -349,7 +349,7 @@ auto chat_service::send_message(std::uint64_t session_id, const chat_message_req
     const auto completion = co_await llm_->complete(plan->request);
     if (!completion)
     {
-        // 失败原文已在 LLM 服务里留日志（不含提示词正文与密钥）；这里只把错误码交回上层。
+
         logger::warn{"chat completion failed: session={} error={}", session_id,
             static_cast<int>(completion.error())};
         co_return std::unexpected{completion.error()};

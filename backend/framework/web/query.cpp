@@ -5,16 +5,7 @@ import cnetmod.protocol.http;
 
 namespace cnetboot::framework::web::query {
 
-/** @brief 从 application/x-www-form-urlencoded 形式的 query string 中取一个键的值。
- *
- *  键值切分与百分号解码都用框架（cnetmod.protocol.http 的 parse_query_params /
- *  url_decode）；本模块只补框架没提供的一件事：**区分「键缺失」与「键存在但为空」**，
- *  因为参数校验要把这两种情况报成不同的 400 文案。
- *
- *  @param query 原始 query string（不含 '?'）
- *  @param key 键名
- *  @return 命中时返回百分号解码后的值；缺失返回 std::nullopt
- */
+
 auto value(std::string_view query, std::string_view key) -> std::optional<std::string>
 {
     const auto parameters = cnetmod::http::parse_query_params(query);
@@ -24,7 +15,7 @@ auto value(std::string_view query, std::string_view key) -> std::optional<std::s
     return cnetmod::http::url_decode(found->second);
 }
 
-/** @brief 解析十进制整数参数；缺失、空值或含非数字返回 std::nullopt。 */
+
 auto integer(std::string_view query, std::string_view key) -> std::optional<int>
 {
     const auto text = value(query, key);
@@ -37,7 +28,7 @@ auto integer(std::string_view query, std::string_view key) -> std::optional<int>
     return result;
 }
 
-/** @brief 解析逗号分隔的整数列表；缺失返回空列表，出现非法元素返回 std::nullopt。 */
+
 auto integer_list(std::string_view query, std::string_view key) -> std::optional<std::vector<int>>
 {
     const auto text = value(query, key);

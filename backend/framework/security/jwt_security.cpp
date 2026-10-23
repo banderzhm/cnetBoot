@@ -20,7 +20,7 @@ namespace {
 
     using error_code = cnetboot::framework::error::error_code;
 
-    /// 会话 ID：128 位随机数的十六进制表示。
+
     constexpr std::size_t session_id_bytes{16};
     constexpr std::string_view rotate_session_script =
         "if redis.call('EXISTS',KEYS[1])==0 then return 0 end;"
@@ -46,12 +46,7 @@ namespace {
                 [](unsigned char character) { return std::isxdigit(character) != 0; });
     }
 
-    /**
-     * @brief 本次认证失败对应的注册错误码，经请求作用域交给 on_failure。
-     *
-     * jwt_auth_failure 只携带通用原因；账号停用这类业务语义由认证器在这里给出
-     * 精确的错误码。
-     */
+
     struct authentication_failure_code
     {
         error_code code;
@@ -87,7 +82,7 @@ namespace {
         }
     }
 
-    /// @brief 构造一次失败：错误码写进请求作用域，状态码取注册表。
+
     [[nodiscard]] auto reject(cnetmod::http::request_context& request, error_code code)
         -> cnetmod::jwt_auth_failure
     {
@@ -101,12 +96,7 @@ namespace {
         };
     }
 
-    /**
-     * @brief 授权快照的进程内缓存（多事件循环共享，按用户分片加锁）。
-     *
-     * 会话是否有效每个请求都查 Redis，缓存的只是“用户 -> 角色/权限/数据范围”的
-     * 快照，把每请求的数据库往返降到 TTL 内 0 次。
-     */
+
     class principal_cache
     {
     public:
@@ -150,7 +140,7 @@ namespace {
             std::chrono::steady_clock::time_point expires_at;
         };
 
-        /// @brief 每个 TTL 周期最多清理一次过期项，保证缓存规模只跟活跃用户数相关。
+
         void sweep(std::chrono::steady_clock::time_point now)
         {
             const auto now_ticks = now.time_since_epoch().count();
@@ -185,7 +175,7 @@ namespace {
         principal_cache principals;
     };
 
-    /// @brief 取授权快照：先查缓存，未命中再经 loader 读库并回填。
+
     [[nodiscard]] auto principal_for(security_state& state, std::int64_t user_id)
         -> cnetmod::task<std::expected<std::shared_ptr<const authenticated_context>, error_code>>
     {
@@ -199,11 +189,7 @@ namespace {
         co_return shared;
     }
 
-    /**
-     * @brief 校验令牌并把身份绑定到请求作用域。
-     *
-     * 每请求一次 Redis 往返（会话读取 + 续期）；授权快照命中缓存时不访问数据库。
-     */
+
     [[nodiscard]] auto authenticate_request(security_state& state,
         cnetmod::http::request_context& request, std::string_view token)
         -> cnetmod::task<std::expected<void, cnetmod::jwt_auth_failure>>
@@ -233,7 +219,7 @@ namespace {
         auto principal = co_await principal_for(state, *id);
         if (!principal)
         {
-            // 主体不再有效（删除 / 停用）：撤销会话，后续请求不必再查库。
+
             if (principal.error() != error_code::upstream_unavailable)
                 (void)co_await sessions.revoke(session->second);
             co_return std::unexpected(reject(request, principal.error()));
@@ -241,7 +227,7 @@ namespace {
         if ((*record)->username != (*principal)->user.username ||
             (*record)->department_id != (*principal)->user.department_id)
         {
-            // 会话签发后身份已变化（改名 / 调部门）：旧会话作废，要求重新登录。
+
             state.principals.erase(*id);
             (void)co_await sessions.revoke(session->second);
             co_return std::unexpected(reject(request, error_code::auth_token_invalid));

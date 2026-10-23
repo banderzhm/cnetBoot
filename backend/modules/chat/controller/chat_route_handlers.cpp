@@ -28,13 +28,23 @@ namespace cnetboot::chat::detail {
 namespace error = cnetboot::framework::error;
 namespace web = cnetboot::framework::web;
 
-// 具名响应体必须有外部链接：Glaze 的字段名反射要求类型具备链接性。
+
 struct done_response {
   std::uint64_t messageId{};
   std::string content;
   std::int64_t tokensIn{};
   std::int64_t tokensOut{};
 };
+
+} // namespace cnetboot::chat::detail
+
+CNETMOD_JSON(cnetboot::chat::detail::done_response,
+    CNETMOD_JSON_FIELD(messageId),
+    CNETMOD_JSON_FIELD(content),
+    CNETMOD_JSON_FIELD(tokensIn),
+    CNETMOD_JSON_FIELD(tokensOut))
+
+namespace cnetboot::chat::detail {
 
 namespace {
 
@@ -51,7 +61,7 @@ namespace {
 } // namespace
 
 auto chat_delta_payload(std::string_view text) -> std::string {
-  // delta 载荷与断语共用同一份实现（契约字段名 text 冻结在 sse_stream）。
+
   return web::sse_delta_payload(text);
 }
 
@@ -80,7 +90,7 @@ auto normalize_reference_context(
     }
     result.value = *decoded;
   } else if (input->is_object() || input->is_array()) {
-    // 空对象 / 空数组等价于不传。
+
     if (input->is_object() && input->get_object().empty())
       return result;
     if (input->is_array() && input->get_array().empty())
@@ -96,7 +106,7 @@ auto normalize_reference_context(
     return result;
   }
 
-  // 上限按字符数（Unicode 码点）而不是字节数：中文 1 字 = 1。
+
   result.characters = cnetboot::chat::count_characters(result.value);
   if (result.value.empty())
     return result;
@@ -344,34 +354,34 @@ auto handle_message_send(cnetmod::http::request_context &context,
   }
   if (!body->content) {
     web::respond_error(context, error::error_code::request_invalid_argument,
-                       "content 必须是字符串");
+                       "content must be a string");
     co_return;
   }
   if (body->content->empty()) {
     web::respond_error(context, error::error_code::request_invalid_argument,
-                       "content 不能为空");
+                       "content must not be empty");
     co_return;
   }
   if (const auto characters = cnetboot::chat::count_characters(*body->content);
       characters > cnetboot::chat::max_message_characters) {
     web::respond_error(context, error::error_code::request_invalid_argument,
-                       std::format("内容过长（{} 字，上限 {} 字）", characters,
+                       std::format("content is too long ({} characters; maximum {})", characters,
                                    cnetboot::chat::max_message_characters));
     co_return;
   }
 
-  // context 接受 string | object | array；对象/数组归一化成紧凑 JSON
-  // 文本。
+
+
   const auto reference_context = normalize_reference_context(body->context);
   switch (reference_context.status) {
   case chat_context_status::invalid_type:
     web::respond_error(context, error::error_code::request_invalid_argument,
-                       "context 只接受字符串或 JSON 对象/数组");
+                       "context must be a string, JSON object, or JSON array");
     co_return;
   case chat_context_status::too_large:
     web::respond_error(
         context, error::error_code::request_invalid_argument,
-        std::format("参考上下文过大（{} 字，上限 {} 字）",
+        std::format("reference context is too long ({} characters; maximum {})",
                     reference_context.characters,
                     cnetboot::chat::max_reference_context_characters));
     co_return;
@@ -402,8 +412,8 @@ auto handle_message_send(cnetmod::http::request_context &context,
     co_return;
   }
 
-  // 会话不存在 / 参数非法在开始流之前判定：这些错误仍走统一错误体的 HTTP 响应，
-  // 不把 404 塞进 200 的事件流里。
+
+
   const auto session = co_await chat.find_session(*id);
   if (!session) {
     web::respond_error(context, session.error());

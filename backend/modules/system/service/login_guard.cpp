@@ -13,7 +13,7 @@ namespace {
 
     constexpr std::string_view key_prefix{"cnetboot:auth:"};
 
-    /// @brief 账号名进入 Redis 键前做十六进制编码：键里不出现任何用户可控的分隔符。
+
     [[nodiscard]] auto encode(std::string_view value) -> std::string
     {
         constexpr std::string_view digits{"0123456789abcdef"};
@@ -54,9 +54,9 @@ auto validate_login_protection(const login_protection_options& options)
     -> std::expected<void, std::string>
 {
     if (options.max_account_failures == 0 || options.max_client_failures == 0)
-        return std::unexpected{std::string{"login 失败阈值必须 >= 1"}};
+        return std::unexpected{std::string{"login failure threshold must be >= 1"}};
     if (options.window_seconds <= 0 || options.lock_seconds <= 0)
-        return std::unexpected{std::string{"login window_seconds / lock_seconds 必须 > 0"}};
+        return std::unexpected{std::string{"login window_seconds and lock_seconds must be > 0"}};
     return {};
 }
 
@@ -105,8 +105,8 @@ auto login_guard::record_success(std::string_view username) -> cnetmod::task<voi
 auto login_guard::count(std::string key, std::uint32_t limit, std::string lock)
     -> cnetmod::task<void>
 {
-    // INCR 与 EXPIRE 同一次往返。每次失败都刷新窗口（滑动窗口：距上次失败
-    // window_seconds 内无新失败才清零）；达到阈值时写入独立的锁键。
+
+
     auto batch = store_->pipeline();
     batch.incr(key).expire(key, std::chrono::seconds{options_.window_seconds});
     auto replies = co_await store_->execute(batch);

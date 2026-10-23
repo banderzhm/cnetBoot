@@ -1,6 +1,4 @@
-/**
- * @brief llm_catalog 的实现：目录快照 -> 脱敏视图 -> JSON。
- */
+
 module cnetboot.ai.service.llm_catalog;
 
 import std;

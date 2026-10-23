@@ -1,64 +1,68 @@
 # cnetBoot
 
-cnetBoot 是基于 cnetmod 的 C++23 后端基础脚手架。它只提供可复用的应用底座：
+cnetBoot is a reusable C++23 backend starter built on cnetmod. It provides a focused
+application foundation:
 
-- RBAC：用户、角色、菜单权限、部门与数据范围；
-- JWT + Redis 会话：登录、刷新、撤销、空闲续期与登录防爆破；
-- 审计日志、统一错误契约、分页、限流、SSE；
-- 显式启用的多供应商、多模型、多 Key AI；
-- 通用多轮 Chat，会话分类和参考上下文均不绑定垂直业务。
+- RBAC for users, roles, permissions, departments, and data scopes;
+- JWT and Redis sessions with login, refresh, revocation, idle renewal, and brute-force protection;
+- audit logging, a stable error contract, pagination, rate limiting, and SSE;
+- explicitly enabled multi-provider, multi-model, multi-key AI integration;
+- provider-neutral multi-turn chat with application-defined categories and reference context.
 
-仓库刻意不包含任何行业算法、内容生产流程或行业实体。业务项目应把自己的 bounded
-context 新增到 `backend/modules/<business>/`，不能反向污染 system、ai 或 chat。
+The repository intentionally contains no industry-specific algorithms, workflows, entities,
+prompts, or vocabulary. Applications add their own bounded contexts under
+`backend/modules/<business>/` without coupling them back into `system`, `ai`, or `chat`.
 
-## 目录
+## Repository layout
 
 ```text
 backend/
-  bootstrap/        Application 模块与唯一组合根
-  framework/        错误、配置、安全、审计、Web 基础设施
+  bootstrap/        Application modules and the single composition root
+  framework/        Errors, configuration, security, audit, and web infrastructure
   modules/
-    system/         RBAC 与认证业务
-    ai/             模型目录、供应商选择与 cnetmod 模型适配
-    chat/           通用会话与消息业务
-  migrations/       MySQL 迁移
-  testing/          契约、分层和组件测试
+    system/         RBAC and identity use cases
+    ai/             Model catalog, provider selection, and cnetmod model adapters
+    chat/           Generic conversations and messages
+  migrations/       MySQL migrations
+  testing/          Contract, architecture, and component tests
 3rdparty/
-  cnetmod/          固定版本的 cnetmod Git submodule
-script/             Windows / WSL 的依赖预构建和 backend 构建入口
+  cnetmod/          Pinned cnetmod Git submodule
+script/             Windows and WSL dependency/backend build entry points
 ```
 
-业务模块采用 Spring 风格的同级分层：`controller/`、`dto/`、`service/`、`domain/`、
-`mapper/`。DTO 不放进 controller，ORM 实体放在 domain，mapper 只承担持久化边界。
+Business modules use peer Spring-style layers: `controller/`, `dto/`, `service/`, `domain/`,
+and `mapper/`. DTOs do not live under controllers, ORM records live in the domain layer, and
+mappers only implement persistence boundaries.
 
-## 配置
+## Configuration
 
-复制并调整 `backend/config/application.yaml`，至少提供：
+Review `backend/config/application.yaml` and provide at least:
 
 ```bash
 export CNETBOOT_DATABASE_PASSWORD='replace-me'
 export CNETBOOT_JWT_SECRET='replace-with-at-least-32-characters'
 ```
 
-`llm.providers` 为空时 AI 明确关闭，服务仍可启动。启用方式见
-`backend/config/llm.providers.example.yaml`。模型能力由 `ai_module` 显式注册，不因
-出现配置文件或路由而隐式开启。
+AI is explicitly disabled when `llm.providers` is empty, while the rest of the service remains
+available. See `backend/config/llm.providers.example.yaml` to enable it. `ai_module` explicitly
+registers model capabilities; merely adding a configuration file or route never enables AI.
 
-## 获取依赖
+## Fetch dependencies
 
-克隆时初始化 cnetmod submodule：
+Clone with the pinned cnetmod submodule:
 
 ```bash
-git clone --recurse-submodules --shallow-submodules <cnetBoot-repository-url>
-# 已经克隆仓库时：
-git submodule update --init --recursive --depth 1
+git clone --recurse-submodules --shallow-submodules https://github.com/banderzhm/cnetBoot.git
+# For an existing checkout:
+git submodule update --init --depth 1 -- 3rdparty/cnetmod
 ```
 
-cnetBoot 不读取工作区外的 cnetmod，也不使用 vcpkg。构建脚本从
-`3rdparty/cnetmod` 构建 cnetmod 自带的第三方依赖并安装为本仓库私有 CMake package。
-若 submodule 尚未完整初始化，3rdparty 脚本会先执行递归初始化。
+cnetBoot never reads cnetmod from a sibling workspace and does not use vcpkg. The prebuild
+scripts build cnetmod and its required bundled dependencies from `3rdparty/cnetmod`, then install
+an isolated CMake package for this repository. Dependencies for disabled components, such as
+PostgreSQL and Raft, are not fetched.
 
-## WSL / Clang 构建
+## WSL / Clang build
 
 ```bash
 ./script/wsl_clang_3rdparty_build.sh
@@ -66,10 +70,11 @@ CNETBOOT_BUILD_TESTING=ON ./script/wsl_clang_build.sh
 ctest --test-dir backend/build-clang --output-on-failure -j2
 ```
 
-第一条命令必须先执行；它把 cnetmod 安装到 `3rdparty/wsl-clang`。backend 脚本只使用这个
-安装包，缺失时会直接报错，不会隐式回退到其它 cnetmod。
+The first command is mandatory and installs cnetmod into `3rdparty/wsl-clang`. The backend build
+only consumes that package and fails clearly when it is missing; it never falls back to another
+cnetmod checkout.
 
-## Windows / MSVC 构建
+## Windows / MSVC build
 
 ```powershell
 .\script\windows_3rdparty_build.ps1
@@ -77,18 +82,21 @@ ctest --test-dir backend/build-clang --output-on-failure -j2
 ctest --test-dir backend/build-windows -C Release --output-on-failure
 ```
 
-Windows 安装目录为 `3rdparty/windows`。默认限制 cnetmod 编译并行度为 1，避免 C++ Modules
-完整构建占用过多内存；可按机器容量传 `-Jobs` 调整。
-WSL 默认并行度为 2，可用 `CNETBOOT_JOBS` 显式调整。
+Windows uses MSVC with Ninja and installs cnetmod into `3rdparty/windows`. The default cnetmod
+build concurrency is one to control peak C++ Modules memory usage; pass `-Jobs` when the machine
+has enough capacity. WSL defaults to two jobs and accepts `CNETBOOT_JOBS` as an override.
 
-`cnetboot_architecture_gate` 是默认构建的强制 `ALL` target，无论是否开启其它测试都会
-执行；分层、命名、cnetmod 依赖布局或构建脚本违规时，backend 构建直接失败。
-GitHub Actions 在 main 的 push 和 pull request 上执行相同预构建、backend 构建和测试流程。
+`cnetboot_architecture_gate` is a mandatory `ALL` target, so every default backend build validates
+layering, naming, the local cnetmod layout, internationalized source contracts, and build scripts.
+GitHub Actions executes the same prebuild, backend build, architecture gate, and tests on Linux
+and Windows for `main` and `develop` pushes and pull requests.
 
-## 扩展规则
+## Extension rules
 
-1. 新业务必须创建具名模块，不允许用 `batch_service`、`common_service` 等无业务含义名称。
-2. Controller 只做协议适配；业务编排属于 Service；数据库实体与规则属于 Domain。
-3. 优先使用 cnetmod Application、ORM、JWT、SSE、Redis 与 AI 能力，不在应用层重造基础设施。
-4. 修改架构后必须运行 `cnetboot_framework_layering_boundaries`，它会阻止垂直业务词、
-   错误目录和反分层命名进入基础模板。
+1. Add each business capability as a named module; avoid generic names such as `batch_service`
+   and `common_service`.
+2. Controllers adapt protocols, services orchestrate use cases, and domains own entities and rules.
+3. Prefer cnetmod Application, ORM, JWT, SSE, Redis, and AI capabilities instead of rebuilding
+   infrastructure in the application.
+4. Run `cnetboot_framework_layering_boundaries` after architecture changes. It rejects vertical
+   business vocabulary, invalid directories, anti-layer naming, and non-internationalized literals.

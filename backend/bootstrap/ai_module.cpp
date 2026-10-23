@@ -1,12 +1,4 @@
-/**
- * @brief ai_module：显式注册多供应商模型、补全服务与模型目录路由。
- *
- * llm 小节在 options 阶段解码与结构校验；registration 阶段把 key 引用解析到
- * services.<name> 实例（缺服务、空 api_key、pool_size
- * 越界都在这里让构建失败）， 再为每个可用供应商注册一个 cnetmod
- * 组合模型。未配置 LLM 时补全实现仍然存在， 只是 configured()=false，用例返回
- * DEPENDENCY.UNAVAILABLE。
- */
+
 module cnetboot.bootstrap.modules;
 
 import std;

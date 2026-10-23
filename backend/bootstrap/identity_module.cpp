@@ -1,10 +1,4 @@
-/**
- * @brief identity_module：系统仓储、JWT 认证、端点授权、登录防护与系统路由。
- *
- * 认证与授权都由端点元数据驱动：路由在注册处声明 anonymous() / optional_identity() /
- * requires_permission()，中间件在路由匹配之后读取，不再维护第二份免鉴权白名单。
- * 未匹配任何路由的请求直接落到 404 / 405，不经过认证。
- */
+
 module cnetboot.bootstrap.modules;
 
 import std;
@@ -45,20 +39,16 @@ namespace {
 
     constexpr std::string_view identity_section{"identity"};
 
-    /// @brief 身份相关 Redis 模板的组件名（会话与登录防护的键各自带前缀，模板不加命名空间）。
+
     constexpr std::string_view identity_store{"identity"};
 
-    /// @brief 登录时“账号不存在”分支用于等价校验的假口令哈希。
+
     struct decoy_password
     {
         std::string encoded;
     };
 
-    /**
-     * @brief 按用户 id 加载请求主体：用户状态 + 角色/权限 + 数据权限范围。
-     *
-     * 名字化的函数对象（项目硬要求：禁止匿名内部类），持有两个容器组件的共享所有权。
-     */
+
     class principal_loader_fn
     {
     public:
@@ -145,7 +135,7 @@ namespace {
         -> std::expected<void, std::string>
     {
         if (options.principal_cache_seconds < 0)
-            return std::unexpected{std::string{"principal_cache_seconds 不能为负"}};
+            return std::unexpected{std::string{"principal_cache_seconds must not be negative"}};
         return system::validate_login_protection(options.login);
     }
 
@@ -168,7 +158,7 @@ auto identity_module::register_components(application::registration_context& con
     const auto options = context.options.current<identity_options>(identity_section);
     const auto& jwt = context.configuration.security.jwt;
 
-    // 系统 XML 语句集是托管服务：run() 期间发布快照，健康检查可见。
+
     auto statements = std::make_shared<system::system_mapper_registry>();
     context.manage(statements);
     context.components.instance(std::move(statements));
@@ -234,7 +224,7 @@ auto identity_module::register_components(application::registration_context& con
     context.components.singleton<decoy_password>(
         [](application::component_resolver&)
         {
-            // 随机口令的真实哈希：与真实账号走完全相同的算法与迭代次数。
+
             auto encoded = cnetmod::security::hash_password(
                 cnetmod::security::generate_secure_token(32));
             if (!encoded)

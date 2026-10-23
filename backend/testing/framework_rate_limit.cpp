@@ -1,6 +1,4 @@
-/**
- * @brief 端点声明式限流：按路由元数据分发到各策略、超限返回 REQUEST.RATE_LIMITED。
- */
+
 import std;
 import cnetmod.coro.task;
 import cnetmod.core.socket;
@@ -28,12 +26,13 @@ auto invoke(const cnetmod::http::middleware_fn& middleware,
     cnetmod::http::response response;
     cnetmod::http::header_map headers{{"X-Forwarded-For", "1.2.3.4"}};
     cnetmod::http::route_params params;
+    std::optional<cnetmod::http::endpoint> matched;
     if (metadata)
     {
-        auto endpoint = std::make_shared<cnetmod::http::endpoint>();
-        endpoint->pattern = "/limited";
-        endpoint->metadata = std::move(*metadata);
-        params.matched = std::move(endpoint);
+        matched.emplace();
+        matched->pattern = "/limited";
+        matched->metadata = std::move(*metadata);
+        params.matched = &*matched;
     }
     cnetmod::http::request_context request{*io, peer, "POST", "/limited", headers, {},
         response, std::move(params)};
@@ -77,7 +76,7 @@ auto main() -> int
             second.body.contains("REQUEST.RATE_LIMITED"),
         "the request over budget answers REQUEST.RATE_LIMITED");
 
-    // 伪造的 X-Forwarded-For 不会换来新的令牌桶（未配置可信代理）。
+
     const auto spoofed = invoke(middleware, ai);
     check(!spoofed.reached, "a spoofed forwarding header does not reset the budget");
 

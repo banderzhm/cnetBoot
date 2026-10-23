@@ -9,7 +9,7 @@ auto count_characters(std::string_view text) noexcept -> std::size_t
     std::size_t total = 0;
     for (const auto raw : text)
     {
-        // UTF-8 续接字节（10xxxxxx）不计：一个码点算一个字，中文与英文都是 1。
+
         if ((static_cast<unsigned char>(raw) & 0xC0) != 0x80)
             ++total;
     }
@@ -53,7 +53,7 @@ auto estimate_tokens(std::string_view text) noexcept -> std::size_t
 {
     if (text.empty())
         return 0;
-    // 3 字节/token 的上界估计：宁可多算，也不要在上下文预算上低估。
+
     return text.size() / 3 + 1;
 }
 

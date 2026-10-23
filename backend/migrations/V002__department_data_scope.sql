@@ -1,11 +1,11 @@
--- V002 —— 部门与数据范围：sys_user.dept_id、sys_role.data_scope、sys_dept、sys_role_dept。
+
 --
--- 幂等：ALTER 语句用 information_schema 守卫，重复执行不会报 Duplicate column /
--- Duplicate key；建表用 IF NOT EXISTS。迁移可能被手工重放，因此必须可重复执行。
+
+
 
 SET @schema_name = DATABASE();
 
--- sys_user.dept_id + 索引
+
 SET @have_dept_id = (SELECT COUNT(*) FROM information_schema.COLUMNS
     WHERE TABLE_SCHEMA = @schema_name AND TABLE_NAME = 'sys_user' AND COLUMN_NAME = 'dept_id');
 SET @sql = IF(@have_dept_id = 0,

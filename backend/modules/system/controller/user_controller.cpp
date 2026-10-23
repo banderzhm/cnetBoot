@@ -17,13 +17,13 @@ import cnetboot.system.service.user_service;
 
 namespace cnetboot::system {
 
-/** @brief 系统用户路由只依赖应用服务，不接触仓储或 Mapper。 */
+
 struct user_route_dependencies
 {
     user_service_resolver resolve_service;
 };
 
-/** @brief GET /api/system/users：分页列出系统用户。 */
+
 [[nodiscard]] auto handle_list_users(cnetmod::http::request_context& request,
     const user_route_dependencies& dependencies) -> cnetmod::task<void>
 {
@@ -36,7 +36,7 @@ struct user_route_dependencies
     auto service = dependencies.resolve_service(request);
     if (!service)
     {
-        // 严格 SaaS 模式下缺少租户作用域等：只记日志，对外给注册码。
+
         logger::error{"user service unavailable"};
         cnetboot::framework::web::respond_error(request,
             cnetboot::framework::error::error_code::upstream_unavailable);

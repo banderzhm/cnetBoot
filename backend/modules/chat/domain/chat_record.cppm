@@ -1,20 +1,9 @@
-/**
- * @brief 对话聚合的持久化模型（chat_session / chat_message 两张表的列清单）。
- *
- * 按项目分层约定，ORM 实体归 domain；实体与业务聚合之间的转换只发生在
- * mapper 边界。
- *
- * 时间口径：DATETIME 列存 **UTC 墙钟**，领域层是 UTC 秒；unix 秒 <-> UTC
- * 墙钟只在映射器 边界互换，SQL 里不出现任何按会话时区解释的函数（FROM_UNIXTIME
- * / UNIX_TIMESTAMP / NOW()）。 温度列 DECIMAL(3,2)：MySQL 协议把 DECIMAL
- * 解码成字符串，而框架的 set_member(double&) 只认 double/float
- * 字段值，所以模型用 std::string 承接原文，边界再转 double。
- */
+
 module;
 
-// CNETMOD_MODEL / CNETMOD_FIELD 只在头文件里：模块 TU 用全局模块片段 include，
-// 宏在模块 purview 里展开（此时 import cnetmod.orm 的 model_traits
-// 等名字已可见）。
+
+
+
 #include <cnetmod/orm.hpp>
 
 export module cnetboot.chat.domain.chat_record;
@@ -24,7 +13,7 @@ import cnetmod.orm;
 
 export namespace cnetboot::chat {
 
-/// @brief chat_session 全列模型。
+
 struct chat_session_record {
   std::uint64_t id{};
   std::uint64_t owner_id{};
@@ -42,7 +31,7 @@ struct chat_session_record {
   std::optional<cnetmod::orm::calendar_datetime> deleted_at;
 };
 
-/// @brief chat_message 全列模型。
+
 struct chat_message_record {
   std::uint64_t id{};
   std::uint64_t session_id{};

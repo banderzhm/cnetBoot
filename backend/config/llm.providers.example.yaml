@@ -1,26 +1,21 @@
-# 多供应商 / 多模型 / 多 key 的 LLM 配置样例。
+# Multi-provider, multi-model, multi-key LLM configuration example.
 #
-# 本文件是**样例**，不会被构建复制（CMake 只复制 config/application.yaml）。
-# 启用方式：把下面 services 里的 openai-* / deepseek-* 条目合并进
-# config/application.yaml 的 services，把顶层 llm 小节整体替换进去，然后按需注入
-# 环境变量。
+# This file is documentation and is not copied by CMake. Merge the service entries into
+# application.yaml, replace its top-level llm section, and inject the environment variables.
 #
-# 核心规则：
-#  1. 一个 services 条目 = 一条 API key + 一个连接池。cnetmod 的 openai 服务按
-#     (type, instance) 注册，pool_size 只决定并发连接数，**不做** key 轮换。
-#     「多 key」= 同一供应商配成多个条目，再由顶层 llm.providers[].keys[] 聚合成
-#     一个逻辑供应商；
-#  2. cnetBoot 显式调用 cnetmod add_chat_model，并明确开启 round_robin 与跨实例 fallback；
-#     只列出多个实例不会隐式换 key，失败顺序与重试次数来自 llm.resilience；
-#  3. 每条 api_key 必须走环境变量展开，禁止明文。cnetmod 支持 ${VAR}、
-#     ${VAR:-default} 与转义 $${；无默认值的缺失变量会让配置加载失败；
-#  4. 未注入密钥的环境把条目 enabled 设为 false（下面用 ${CNETBOOT_LLM_ENABLED:-false}）。
-#     未启用的条目允许 api_key 为空，它对应的 key 在目录里显示 configured=false；
-#  5. llm 小节由 ai 模块声明（typed options），未知键、默认值不可达、重复名/模型/
-#     key、一个 services 条目被多条 key 引用，都会让 build() 带配置路径失败。
+# Rules:
+# 1. One service entry represents one API key and one connection pool. pool_size controls
+#    concurrency; it does not rotate keys. Aggregate multiple entries through providers[].keys[].
+# 2. cnetBoot explicitly enables round-robin selection and cross-instance fallback. Retry order
+#    and attempts are controlled by llm.resilience.
+# 3. Inject every api_key through ${VAR} or ${VAR:-default}; never commit a plaintext key.
+# 4. Disable entries without credentials. Disabled entries may have an empty api_key and are
+#    exposed as configured=false in the catalog.
+# 5. ai_module owns this typed section. Unknown keys, unreachable defaults, duplicate names or
+#    models, and sharing one service across keys fail during Application construction.
 
 services:
-  # --- 供应商实例：一个条目 = 一条 key ---------------------------------------
+  # One provider service per key.
   openai-primary:
     type: openai
     instance: alpha
@@ -31,7 +26,6 @@ services:
     tls_verify: true
     timeout_seconds: 120
     pool_size: 4
-  # openai 供应商的第 2 条 key：同一个 base_url，不同密钥，独立连接池。
   openai-secondary:
     type: openai
     instance: beta
@@ -42,7 +36,6 @@ services:
     tls_verify: true
     timeout_seconds: 120
     pool_size: 2
-  # 第二个供应商：仍走 OpenAI 兼容协议，只是端点不同（DeepSeek / 自建网关同理）。
   deepseek-primary:
     type: openai
     instance: deepseek
@@ -54,17 +47,16 @@ services:
     timeout_seconds: 120
     pool_size: 2
 
-# --- 供应商目录（顶层小节）：把一个逻辑供应商的多条 key 聚起来，并声明可用模型 ---
 llm:
-  default_provider: openai      # 请求未指定 provider 时的回退
-  default_model: gpt-4o-mini    # 请求未指定 model 时的回退（须在默认供应商的 models 里）
+  default_provider: openai
+  default_model: gpt-4o-mini
   providers:
-    - name: openai              # 目录主键，全局唯一
+    - name: openai
       type: openai
       models: [gpt-4o-mini, gpt-4o]
       keys:
-        - name: primary         # key 别名（同供应商内唯一；缺省取 service 名）
-          service: openai-primary   # 指向上面的 services 条目
+        - name: primary
+          service: openai-primary
         - name: secondary
           service: openai-secondary
     - name: deepseek
@@ -73,6 +65,6 @@ llm:
       keys:
         - service: deepseek-primary
   resilience:
-    attempts_per_key: 1         # 每条 key 的尝试次数；1 = 失败立即切下一条 key
-    initial_backoff_ms: 100     # 同一 key 重试之间的初始退避
-    max_backoff_ms: 2000        # 退避上限
+    attempts_per_key: 1
+    initial_backoff_ms: 100
+    max_backoff_ms: 2000

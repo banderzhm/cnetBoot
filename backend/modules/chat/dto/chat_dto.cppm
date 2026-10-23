@@ -14,7 +14,7 @@ import cnetboot.framework.pagination;
 
 export namespace cnetboot::chat::dto {
 
-/** @brief 会话写入请求体（新建与 PATCH 共用）。 */
+
 struct chat_session_request
 {
     std::optional<std::string> category;
@@ -24,7 +24,7 @@ struct chat_session_request
     std::optional<double> temperature;
 };
 
-/** @brief 发送消息请求体。 */
+
 struct chat_message_request
 {
     std::optional<std::string> content;
@@ -32,7 +32,7 @@ struct chat_message_request
     std::optional<bool> stream;
 };
 
-/** @brief 会话响应。 */
+
 struct chat_session_response
 {
     std::uint64_t id{};
@@ -47,7 +47,7 @@ struct chat_session_response
     std::string updatedAt;
 };
 
-/** @brief 消息响应。 */
+
 struct chat_message_response
 {
     std::uint64_t id{};
@@ -60,7 +60,7 @@ struct chat_message_response
     std::optional<std::int64_t> tokensOut;
 };
 
-/** @brief 分页响应体（items / total / page / page_size）。 */
+
 template <typename T> struct chat_page_response
 {
     std::vector<T> items;
@@ -74,7 +74,7 @@ template <typename T> struct chat_page_response
 [[nodiscard]] auto project(const cnetboot::chat::chat_message& value)
     -> chat_message_response;
 
-/** @brief 把分页结果投影成分页响应。 */
+
 template <typename Entity, typename Projection>
 [[nodiscard]] auto project_chat_page(
     const cnetboot::framework::pagination::page_result<Entity>& page,
@@ -97,7 +97,7 @@ template <typename Entity, typename Projection>
 [[nodiscard]] auto to_document(const chat_message_response& value)
     -> cnetmod::json::document;
 
-/** @brief 序列化分页投影；元素转换由调用方提供。 */
+
 template <typename T, typename ToDocument>
 [[nodiscard]] auto page_document(const chat_page_response<T>& value,
     ToDocument&& to_document_element) -> cnetmod::json::document

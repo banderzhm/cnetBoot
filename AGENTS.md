@@ -1,284 +1,151 @@
 # cnetBoot Repository Instructions
 
-本文件是 cnetBoot 的项目级规则。它只描述 cnetBoot 的产品边界、分层、命名、组合和验收要求；
-cnetmod 的 API、协程、ORM、Redis、HTTP、SSE、安全、AI、模块与构建规则，以 cnetmod 仓库
-最新生成的 `AGENTS.md` 为唯一事实来源。
+## Mandatory AI startup
 
-## 0. AI 开始工作前的强制步骤
+Before searching, designing, or changing code, an AI agent must:
 
-如果执行者是 AI Agent，开始搜索、分析、设计、修改或生成代码之前，必须依次完成：
+1. Read this file in full.
+2. Initialize `3rdparty/cnetmod` when necessary.
+3. You must read the latest `3rdparty/cnetmod/AGENTS.md` in full. It is authoritative for cnetmod APIs, modules, concurrency, security, ORM, Redis, HTTP, SSE, AI, and build rules.
+4. Read the relevant upstream `skill/**/*.md` files named there.
+5. Verify the exact cnetmod revision consumed by this repository; never guess APIs from memory.
 
-1. 完整读取本文件。
-2. 确认仓库内的 cnetmod Git submodule 已初始化：源码固定在
-   `3rdparty/cnetmod/`，不得引用工作区外的兄弟目录或个人机器绝对路径。
-3. **完整读取最新的 `3rdparty/cnetmod/AGENTS.md`，不得只读取摘要、节选或凭旧上下文回忆。**
-4. 根据任务类型，再读取 cnetmod `AGENTS.md` 中列出的对应 `skill/**/*.md` 源文件。例如：
-   - Application、组件注册、多事件循环：`skill/infra/application.md`
-   - 架构、模块、接口实现分离：`skill/infra/architecture.md`、
-     `skill/infra/module-conventions.md`、`skill/infra/new-module-guide.md`
-   - ORM、XML、数据权限、多租户、自动填充：`skill/database/database-orm.md`
-   - MySQL / Redis：`skill/database/mysql.md`、`skill/database/redis.md`
-   - HTTP 路由、中间件、SSE：`skill/http/http-server.md`、`skill/http/http-middleware.md`
-   - JWT 与口令安全：`skill/security/security-jwt.md`
-   - AI / OpenAI 接入：`skill/protocols/openai-mail-dns.md`
-   - 协程、执行器、超时和取消：`skill/coro/coroutine.md`、
-     `skill/coro/executor-bridge.md`、`skill/coro/timer-retry.md`
-5. 检查实际安装或引用的 cnetmod 版本与源码分支，不能因为“API 看起来相似”而猜签名。
+If the submodule or its instructions are missing, report it. Do not recreate framework capabilities inside cnetBoot.
 
-若 `3rdparty/cnetmod` 或其 `AGENTS.md` 不存在，先执行
-`git submodule update --init --recursive --depth 1`。
-仍然缺失时，AI 必须明确报告缺失事实；不得自行补造 cnetmod API、
-复制旧实现或在 cnetBoot 内重造一套框架能力。若本文件与 cnetmod 规则冲突：
+## Product boundary
 
-- cnetmod API、安全、并发、模块和底层能力由 cnetmod `AGENTS.md` 决定；
-- cnetBoot 的业务边界、目录分层、命名与组合方式由本文件决定；
-- 仍无法同时满足时，停止实现并把具体冲突交给用户决定。
+cnetBoot is an international, general-purpose C++23 backend starter built on cnetmod. It is not a vertical-industry application.
 
-不要把 cnetmod 的 60 多万字生成文档复制进本仓库。必须读取上游最新文件，避免两份规范漂移。
+The built-in surface is limited to:
 
-## 1. 产品边界
+- RBAC: users, roles, permissions, menus, departments, and data scopes;
+- identity: login, JWT verification, Redis sessions, refresh, revocation, and abuse protection;
+- infrastructure: stable errors, pagination, auditing, rate limiting, body limits, SSE, and observability;
+- generic AI: multiple providers, models, keys, explicit model registration, and catalogs;
+- generic chat: conversations, messages, categories, reference context, and sync/stream generation.
 
-cnetBoot 是基于 cnetmod 的通用 C++23 后端基础脚手架，不是任何具体行业应用。
+Never add industry algorithms, entities, prompts, samples, cache keys, errors, routes, tables, DTOs, permissions, or roles. Repository-owned source, tests, migrations, configuration, and public documentation must be English-only. The nested cnetmod submodule follows its own repository rules.
 
-内置能力只能包括：
+New product domains belong in `backend/modules/<bounded-context>/` and are registered explicitly by their own Application module. Foundation modules must not depend on added product domains.
 
-- RBAC：用户、角色、菜单/权限、部门、数据范围；
-- 身份：登录、JWT 签发/验证、Redis 会话、刷新、撤销、登录防爆破；
-- 基础设施：统一错误、分页、审计、限流、请求体限制、SSE、可观测性；
-- 通用 AI：多供应商、多模型、多 Key、显式模型注册、目录查询；
-- 通用 Chat：会话、消息、分类、参考上下文、同步与流式生成。
+## Architecture
 
-禁止把任何垂直业务直接写入基础模板，包括但不限于：
+Built-in Application modules are:
 
-- 行业算法、行业实体、行业提示词、行业缓存键或行业错误码；
-- 为某个业务定制的路由、表、枚举、DTO、权限码和默认角色；
-- 通过 `if/else`、字符串类型码或一个“大而全 Service”隐藏多个业务模块。
+- `platform`: entry middleware, stable 404/405 handling, XML statements, auditing, and cross-cutting infrastructure;
+- `identity`: RBAC, authentication, authorization, JWT/Redis sessions, and system routes;
+- `ai`: typed options, catalogs, explicit `add_chat_model`, and the application-facing LLM service;
+- `chat`: conversation/message repositories, use cases, HTTP routes, and SSE routes.
 
-需要新增业务时，创建 `backend/modules/<bounded-context>/`，由自己的 Application module 显式
-注册。业务模块可以依赖 system、ai、chat 的公开契约，基础模块不得反向依赖新增业务。
+`backend/bootstrap/` is the only composition root. Only it may read top-level configuration, declare typed options, register implementations, choose lifetimes, and connect bounded contexts.
 
-## 2. 总体架构与依赖方向
+Business code must not depend on `application_runtime`, use runtime as a service locator, or use two-phase `attach()` initialization. Inject dependencies through constructors or explicit factories. Missing dependencies must fail Application construction before traffic is accepted.
 
-内置 Application 模块固定为：
+Each module uses sibling directories:
 
 ```text
-platform -> identity -> ai -> chat
+controller/  HTTP routes and transport adaptation
+dto/         request/response DTOs and transport projections
+service/     named use cases, transactions, and orchestration
+domain/      entities, value objects, rules, and ORM records
+mapper/      repository implementations, XML, and persistence mapping
 ```
 
-- `platform`：入口中间件、统一 404/405、XML 语句集、审计存储等跨业务基础能力；
-- `identity`：RBAC、认证、授权、JWT/Redis 会话与 system 路由；
-- `ai`：typed options、模型目录、显式 `add_chat_model`、应用层 `llm_service`；
-- `chat`：会话/消息仓储、Chat 用例和 HTTP/SSE 路由。
+Dependency direction is `controller -> service -> domain <- mapper`; bootstrap may depend on all layers only for composition.
 
-唯一组合根是 `backend/bootstrap/`。只有组合根可以：
+- Controllers parse transport input, invoke one use case, and write a response. No SQL, permission algorithms, cache policy, or multi-component orchestration.
+- DTOs belong in `dto/`, never `controller/*_dto.cppm`.
+- ORM records belong in `domain/`, never `mapper/`.
+- Mappers handle persistence and conversion and must not hold runtime objects.
+- Services use domain names. `batch_service`, `common_service`, `base_service`, `manager_service`, and `helper_service` are forbidden.
+- Shared HTTP, time, security, and audit facilities belong in `backend/framework/`.
+- `.cppm` exports interfaces; non-template implementation belongs in matching `.cpp` files.
 
-- 读取顶层配置并声明 typed options；
-- 注册 repository、mapper、service、model 和 middleware；
-- 决定实现绑定、实例名、策略和生命周期；
-- 连接不同 bounded context。
+## Prefer cnetmod
 
-业务层禁止直接依赖 `application_runtime`，禁止把 runtime 当 service locator，禁止先构造空对象再
-`attach()` 的两阶段初始化。依赖必须通过构造函数或明确的 factory 注入；构建阶段缺依赖必须让
-Application build 失败，而不是等首个请求才失败。
+Check current cnetmod instructions and source before adding infrastructure. Prefer upstream repositories, ORM/XML facilities, logical deletion, automatic fill, tenant/data scopes, Redis templates, pool timeouts, pipelines, JWT middleware, endpoint metadata, optional authentication, authorization, routers, 405 handling, body limits, rate limiting, SSE, cancellation, timeout handling, event-loop restoration, chat models, file I/O, durability, and executor offload.
 
-## 3. Spring 风格模块分层
+If a gap is framework-generic, implement it in cnetmod and update its skill documentation and generated `AGENTS.md`. Do not hide it behind a cnetBoot resolver, wrapper, service locator, or error-string parser.
 
-每个业务模块使用同级目录：
+## AI, chat, JSON, and DTO rules
 
-```text
-modules/<context>/
-  controller/  HTTP 路由声明和协议适配
-  dto/         请求/响应 DTO、领域对象到传输对象的投影
-  service/     具名用例、事务边界、业务编排
-  domain/      实体、值对象、领域规则、ORM record
-  mapper/      Repository 实现、XML statement、持久化转换
+- AI is explicitly enabled: `ai_module` validates typed `llm` options and explicitly calls `add_chat_model`.
+- Multiple providers/models/keys are explicit composition policy. Provider SDK types stay under `modules/ai/service/model/`.
+- Other modules depend only on cnetBoot's `llm_service`, `llm_request`, and `llm_response` contracts.
+- Chat categories, reference context, prompts, and samples remain generic and English-only.
+- Streaming routes enter through `request_context::with_sse()`.
+- Client disconnect, cancellation, upstream rate limits, and upstream failure are distinct states.
+- Never hand-write or concatenate raw JSON, including tests and fallbacks.
+- Define DTOs for stable contracts; use cnetmod JSON objects/arrays for dynamic structures.
+- Do not introduce a second JSON library or scatter repeated transport keys through controllers.
+
+## Persistence rules
+
+- Prefer ORM repositories/wrappers; use XML only for semantics the current ORM cannot express.
+- ORM and XML share tenant, permission, logical-deletion, and automatic-fill semantics.
+- Configure logical deletion per entity/table; do not mix boolean and nullable timestamp policies globally.
+- Use automatic fill for creation/update timestamps unless an explicit atomic or preservation requirement exists.
+- Store MySQL `DATETIME(6)` as UTC wall-clock values. Convert Unix time at mapper boundaries; avoid session-time-zone SQL functions.
+- XML must not duplicate interceptor-injected predicates.
+- Add ordered migrations; never rewrite released history.
+- Use structured database errors, never message parsing.
+- Complex tenant, hierarchy, deletion, and fill changes require real database tests.
+
+## Identity, Redis, and concurrency
+
+- JWT issuer, secret, lifetimes, and Redis session settings come from typed YAML/environment configuration.
+- Protected requests validate both JWT and Redis session state.
+- Redis acquisition respects pool timeout. Authentication failures are explicit; optional caches degrade quickly.
+- Login limits use trusted-proxy client resolution.
+- Password hashing uses cnetmod security APIs only.
+- Use `cnetmod::task<T>` and `co_await`; never block an event-loop thread.
+- Offloaded work resumes on the request's event loop. Request sockets, SSE streams, and scoped repositories stay on their owner loop.
+- Coroutine paths use cnetmod locks/semaphores, not blocking standard synchronization.
+
+## C++23 and naming
+
+- Use C++23 Modules and `import std;`; do not add standard-library includes.
+- Prefix standard-library names with `std::` and directly import every used cnetmod module.
+- Use `std::expected`, registered errors, and cnetmod logger.
+- Environment variables use `CNETBOOT_`.
+- New errors update the enum, registry, `backend/contracts/error_codes.yaml`, and tests together.
+- Names must express ownership. Do not add ambiguous `misc`, `utils2`, or `common_manager` components.
+- Do not add root directories or top-level modules without updating CMake, docs, and gates.
+
+## Required workflow and gates
+
+1. Read these rules and current cnetmod instructions.
+2. Use CodeGraph before grep when `.codegraph/` exists.
+3. Inspect Git state and preserve user changes.
+4. Place changes in cnetmod, framework, module, or bootstrap according to ownership.
+5. Update interfaces, implementations, CMake, configuration, migrations, contracts, tests, and docs together.
+6. After a cnetmod revision change, prebuild/install cnetmod before building the backend.
+7. Run mandatory gates, complete builds, and tests. Do not commit failed builds.
+8. Run `git diff --check` and check for generated output, secrets, personal paths, non-English text, and vertical-domain material.
+
+`cnetboot_framework_layering_boundaries` must reject unregistered modules, non-English repository text, vertical vocabulary, misplaced DTOs/records, ambiguous services, leaked provider types, and missing required boundaries. `cnetboot_architecture_gate` remains an `ALL` target in local and GitHub Actions builds.
+
+Build cnetmod from bundled source without vcpkg, then consume its installed CMake package:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File script/windows_3rdparty_build.ps1 -Config Release
+powershell -ExecutionPolicy Bypass -File script/windows_build.ps1 -Config Release -BuildTests
 ```
-
-依赖方向：
-
-```text
-controller + dto -> service -> domain <- mapper
-bootstrap -> 所有层（仅装配）
-```
-
-具体约束：
-
-- Controller 只解析路径、查询、Header、Body，调用一个清晰用例并写响应；不得写 SQL、权限算法、
-  缓存策略或跨多个底层组件自行编排业务。
-- DTO 必须位于与 controller 同级的 `dto/`；禁止 `controller/*_dto.cppm`。
-- ORM record 是数据库实体，必须位于 `domain/`；禁止放在 mapper 中。
-- Mapper 只处理持久化查询、ORM/XML 参数转换和 record/domain 映射；不得持有 runtime。
-- Service 以业务用例或领域能力命名，例如 `authorization_service`、`chat_service`、
-  `login_guard`。禁止 `batch_service`、`common_service`、`base_service`、`manager_service`、
-  `helper_service` 等无法说明业务所有权的名称。
-- 跨模块通用的 HTTP、时间、安全、审计能力放在 `backend/framework/`；不能借“复用”为由让一个
-  业务 controller 成为其它模块的公共库。
-- `.cppm` 只导出接口；非模板实现放 `.cpp`。不要把实现全部塞回模块接口文件。
-
-## 4. cnetmod 能力优先，禁止应用层造轮子
-
-实现前必须先在最新 cnetmod `AGENTS.md`、skill 和源码中确认已有能力。以下场景必须优先使用
-cnetmod：
-
-- Application builder、application_module、typed options、component resolver；
-- repository factory、managed repository、ORM wrapper、XML mapper、逻辑删除、自动填充；
-- 数据权限、多租户、租户树/组织树上下文；
-- Redis template、连接池超时、pipeline；
-- JWT 中间件、端点元数据、optional authentication、permission authorization；
-- HTTP router、统一 405、body limit、rate limiter；
-- `request_context::with_sse()`、SSE writer、取消、超时和事件循环恢复；
-- `add_chat_model`、composed model、模型调用、重试/熔断基础能力；
-- 文件异步 I/O、durability、executor/offload。
-
-只有确认 cnetmod 不具备通用能力时，才允许在 cnetBoot 中实现应用特有部分。若缺口属于通用框架，
-应修 cnetmod，并同步更新它的 skill 与生成后的 `AGENTS.md`；不要在 cnetBoot 写 resolver、wrapper、
-service locator 或字符串匹配补丁来绕开。
-
-## 5. AI 与 Chat 规则
-
-- AI 能力必须显式开启。`ai_module` 读取并验证 `llm` typed options，然后显式调用
-  `add_chat_model`；仅出现配置或路由不得隐式创建默认模型。
-- 多供应商、多模型、多 Key 是应用组合策略。cnetmod 不负责业务意义上的换 Key；cnetBoot 通过
-  显式 composed model 配置 round-robin、fallback 和每 Key 尝试次数。
-- Provider SDK、`cnetmod.ai` 和上游请求/响应类型只能出现在 `modules/ai/service/model/` 边界。
-- 其它模块只依赖 cnetBoot 的 `llm_service`、`llm_request`、`llm_response` 契约。
-- Chat 的 `category` 是应用自定义分类，`context` 是通用参考上下文；不能用它们偷偷编码某个行业。
-- 系统提示词必须通用，不能内置特定行业角色、术语和结论格式。
-- AI 请求失败使用注册错误码，不能靠匹配厂商错误字符串决定业务状态。
-- 流式接口必须从 `request_context::with_sse()` 进入，以保留总时长和单次写入看门狗。
-- 下游断开、请求取消、上游 429/5xx 是不同事实；不得把“连接关闭”描述成“上游一定停止生成”。
-
-## 6. JSON 与 DTO
-
-- 禁止手写或拼接原始 JSON 字符串，包括示例请求、错误兜底和测试期望。
-- 请求与响应先定义 DTO；稳定响应通过 DTO 投影，动态结构使用 `cnetmod::json::object()`、
-  `array()` 和逐级字段赋值。
-- JSON 编解码只使用 cnetmod 提供的 Glaze-only 工具；不得引入第二套 JSON 框架。
-- DTO 字段名由传输契约决定，领域字段名由领域语义决定；转换集中在 dto/mapper 边界。
-- 不得在 Controller 中散落重复的 JSON key、时间格式化或 nullable 编码逻辑。
-
-## 7. 数据库、ORM、XML 与迁移
-
-- 优先 ORM repository/wrapper；需要动态 SQL 或框架明确不支持的数据库语义时才使用 XML。
-- ORM record 放 domain，repository/mapper 构造注入；禁止 mapper 自己从 runtime 取连接或仓储。
-- ORM 与 XML 必须共享相同的租户、数据权限、逻辑删除和自动填充语义。
-- `deleted` 0/1 与 nullable `deleted_at` 等策略按实体/表配置，不允许全局策略互相污染。
-- `created_at` / `updated_at` 使用 cnetmod 自动填充；确需保留外部时间或多列原子同值时明确说明。
-- MySQL `DATETIME(6)` 统一保存 UTC 墙钟；Unix 秒与 `calendar_datetime` 只在 mapper 边界转换；
-  禁止依赖数据库会话时区的 `NOW()`、`CURRENT_TIMESTAMP`、`FROM_UNIXTIME()`。
-- XML 语句不得重复手写已由拦截器注入的租户、数据权限或逻辑删除条件。
-- 所有 schema 变化必须新增按序迁移文件；不要修改已经发布的迁移来伪造历史。
-- 唯一键冲突、数据库错误等必须使用 cnetmod 提供的结构化错误信息，不得解析错误消息文本。
-- 数据库相关改动至少补 mapper/SQL 渲染测试；复杂租户、上下级、逻辑删除和自动填充需要真实数据库测试。
-
-## 8. 身份、安全与 Redis
-
-- JWT issuer、secret、有效期、会话空闲期必须来自 YAML/env typed configuration，禁止硬编码。
-- JWT 只是会话凭证；每个受保护请求必须核验 Redis 会话状态，logout/refresh 后撤销应立即生效。
-- Redis 保存会话 key 与用户会话信息，刷新/访问按策略续期；不得把“能解 JWT”当成“会话有效”。
-- Redis 获取连接必须受 pool timeout 约束。鉴权依赖不可用时明确返回服务不可用；可降级缓存应快速跳过。
-- 登录限流使用可信代理解析后的客户端地址，不能无条件信任 `X-Forwarded-For`。
-- 口令只用 cnetmod.security 提供的安全哈希能力，禁止应用层自写密码学。
-- 权限失败、令牌失败、依赖失败和数据库失败必须映射为不同的注册错误码，不能一律返回 401/403。
-
-## 9. 协程、多事件循环与并发
-
-- 使用 `cnetmod::task<T>` + `co_await`；事件循环线程上禁止同步阻塞。
-- CPU 密集任务通过 executor/offload；完成后必须恢复到发起请求所属事件循环，而不是固定控制循环。
-- 请求 socket、SSE stream 和 request-scoped repository 只能在所属循环使用。
-- 多事件循环资源遵循 cnetmod 的 sharded/owned 语义；不要凭“单例对象”推断底层连接池只有一份。
-- 协程路径只准用 cnetmod 协程锁/信号量；禁止 `std::mutex`、`std::condition_variable`。
-- 超时、取消、客户端断开、上游失败分别建模；看门狗关闭连接不等于自动取消所有上游工作。
-- 连接池 `maximum_size` 是应用总量还是分片量必须以当前 cnetmod 文档和实现为准，并与
-  `application.io_threads` 一起验证。
-
-## 10. C++23 与模块规则
-
-- 使用 C++23 Modules 与 `import std;`；禁止为标准库新增 `#include`。
-- 标准库符号必须带 `std::` 前缀。
-- 每个使用到的 cnetmod 模块必须直接 import；不得依赖传递 import 的偶然可见性。
-- 统一使用 `std::expected` 和注册错误码；不可恢复的构建错误才抛异常交给 Application build 捕获。
-- 唯一日志方式是 cnetmod logger；禁止 `printf`、`std::cout`、`std::println` 和 iostream 日志。
-- 耗时或阻塞第三方 API 必须通过 cnetmod executor bridge 接入。
-- 接口/实现职责清晰，抽象必须对应真实变化点；禁止为了模式而增加 resolver、factory、wrapper 层。
-
-## 11. 配置、错误契约和命名
-
-- 顶层配置由拥有它的 Application module 声明 typed options；未知键必须在构建期报带路径错误。
-- 环境变量统一使用 `CNETBOOT_` 前缀；示例配置不得携带其它项目品牌。
-- 服务实例名、组件名、错误码、权限码要稳定且表达语义。
-- 新增错误码必须同步：enum、registry、`backend/contracts/error_codes.yaml` 和契约测试。
-- 文件、类、函数、路由和表名使用具体业务词；禁止 `misc`、`utils2`、`common_manager` 等模糊命名。
-- 不得在根目录或顶层模块列表中擅自增加目录；新增 bounded context 要同步 CMake、文档和门禁白名单。
-
-## 12. 修改流程
-
-AI 每次修改应按以下顺序工作：
-
-1. 读取本文件与最新 cnetmod `AGENTS.md`/相关 skill。
-2. 检查 `.codegraph/`；存在时先用 CodeGraph 定位符号和调用链，再使用 `rg` 补充精确搜索。
-3. 检查工作区状态，保留用户已有改动，不覆盖不相关文件。
-4. 先确认 cnetmod 是否已有能力，再确定修改属于 framework、业务模块还是 bootstrap。
-5. 同步修改接口、实现、CMake、配置、迁移、契约、测试和文档，不能只修一层。
-6. 首次构建或 cnetmod 版本变化后，必须先运行当前平台的 3rdparty 脚本构建并安装 cnetmod，
-   再运行 backend 构建脚本；不得直接把 cnetmod 源码目录塞进 `CMAKE_PREFIX_PATH`。
-7. 运行格式/静态门禁、完整构建和测试；构建失败不得提交。
-8. 提交前运行 `git diff --check`，确认没有生成物、密钥、绝对个人路径或垂直业务泄漏。
-
-## 13. 强制门禁与验证
-
-`cnetboot_framework_layering_boundaries` 必须持续检查并拒绝：
-
-- 基础模板出现未登记的业务模块；
-- 垂直业务词进入生产源码、配置、迁移或文档；
-- DTO 放进 controller；
-- ORM record 放进 mapper；
-- 模糊 Service 名称；
-- AI provider 类型越过 `ai/service/model` 边界；
-- system/chat 的 DTO 目录或 AI model 边界被删除。
-
-该门禁通过 CMake 的 `cnetboot_architecture_gate` `ALL` target 接入默认构建，Windows 和
-WSL 构建都必须执行。禁止为了缩短构建而把它改成只在 `BUILD_TESTING=ON` 时创建，
-或者从 `ALL` 中移除。GitHub Actions 的 push/PR 构建也必须调用标准预构建与 backend
-脚本，不得绕过该 target。
-
-标准构建顺序如下。脚本使用 cnetmod 自带 3rdparty 源码构建依赖，不允许使用 vcpkg，且 backend
-只能消费安装后的 CMake package：
 
 ```bash
-# WSL / Clang
-./script/wsl_clang_3rdparty_build.sh
-CNETBOOT_BUILD_TESTING=ON ./script/wsl_clang_build.sh
-ctest --test-dir backend/build-clang --output-on-failure -j2
-
-# Windows / MSVC（PowerShell）
-.\script\windows_3rdparty_build.ps1
-.\script\windows_build.ps1 -BuildTests
-ctest --test-dir backend/build-windows -C Release --output-on-failure
-
-git diff --check
+./script/wsl_clang_3rdparty_build.sh Release
+CNETBOOT_BUILD_TESTING=ON ./script/wsl_clang_build.sh Release
 ```
 
-`windows_build.ps1` 与 `wsl_clang_build.sh` 必须在安装包缺失时立即失败，并明确提示先运行对应的
-3rdparty 脚本。安装目录固定为 `3rdparty/windows/` 与 `3rdparty/wsl-clang/`；构建目录和安装目录
-都不得提交。
+Install prefixes are `3rdparty/windows/` and `3rdparty/wsl-clang/`; build/install output is never committed. Real MySQL/Redis and tenant/security changes require real-service success, failure, timeout, concurrency, revocation, deletion, cross-tenant, and hierarchy tests. Report skipped tests explicitly.
 
-涉及 MySQL、Redis、租户/数据权限或故障降级时，不能只跑纯内存测试：必须启用对应真实服务测试，
-覆盖正常、不可达、超时、并发、撤销、逻辑删除、跨租户和上下级边界。测试因环境缺失而 Skip 必须
-在交付说明中明确列出，不能宣称其已经通过。
+## Pre-commit checklist
 
-## 14. 提交前清单
-
-- [ ] AI 已完整读取最新 cnetmod `AGENTS.md` 和相关 skill。
-- [ ] cnetmod 来自 `3rdparty/cnetmod` submodule，没有引用仓库外绝对路径。
-- [ ] 已先运行当前平台的 3rdparty 预构建脚本，再构建 backend。
-- [ ] 没有重造 cnetmod 已有能力。
-- [ ] 没有垂直业务语义污染 cnetBoot。
-- [ ] DTO、domain record、mapper、service、controller 位置正确。
-- [ ] 没有手写原始 JSON、硬编码 secret、数据库时区函数或字符串解析数据库错误。
-- [ ] AI 能力由组合根显式开启，Chat 只依赖应用层 LLM 契约。
-- [ ] SSE 使用 `with_sse()`，协程恢复到请求所属事件循环。
-- [ ] 配置、错误契约、迁移、CMake、测试和文档同步。
-- [ ] Clang/libc++ 完整构建成功。
-- [ ] CTest、架构门禁和真实依赖测试按改动范围通过。
-- [ ] `git diff --check` 通过，工作区只包含本任务改动。
+- [ ] Current cnetmod instructions and relevant skills were read.
+- [ ] cnetmod was prebuilt after revision changes.
+- [ ] Architecture gate passed.
+- [ ] Required Windows/WSL builds and CTest suites passed; skips are reported.
+- [ ] `git diff --check` passed.
+- [ ] Repository-owned text is English-only and domain-neutral.
+- [ ] No secrets, generated files, build output, or personal paths are staged.
+- [ ] Framework changes updated cnetmod skills and generated `AGENTS.md`.
